@@ -121,7 +121,10 @@ Plans:
   1. User can see houses with red walls, blue roofs, dark windows, and brown doors (not all same color)
   2. User can see characters with distinct hair color, skin color, and clothing color (not all same color)
   3. User can see multiple buildings/characters of same type with different color variations
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 07-01-PLAN.md — Rework BuildingRenderer and CharacterRenderer for per-instance coloring
 
 ### Phase 8: Cartoon Shader
 **Goal**: Voxels render with cartoon aesthetic — black outlines and flat shading
