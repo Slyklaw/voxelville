@@ -19,13 +19,18 @@ export class InstancedPool {
     return this.mesh;
   }
 
-  addInstance(position: THREE.Vector3, scale?: THREE.Vector3): number {
+  addInstance(position: THREE.Vector3, scale?: THREE.Vector3, rotation?: THREE.Euler): number {
     const index = this._count;
     dummy.position.copy(position);
     if (scale) {
       dummy.scale.copy(scale);
     } else {
       dummy.scale.set(1, 1, 1);
+    }
+    if (rotation) {
+      dummy.rotation.copy(rotation);
+    } else {
+      dummy.rotation.set(0, 0, 0);
     }
     dummy.updateMatrix();
     this.mesh.setMatrixAt(index, dummy.matrix);
@@ -35,12 +40,17 @@ export class InstancedPool {
     return index;
   }
 
-  updateInstance(index: number, position: THREE.Vector3, scale?: THREE.Vector3): void {
+  updateInstance(index: number, position: THREE.Vector3, scale?: THREE.Vector3, rotation?: THREE.Euler): void {
     dummy.position.copy(position);
     if (scale) {
       dummy.scale.copy(scale);
     } else {
       dummy.scale.set(1, 1, 1);
+    }
+    if (rotation) {
+      dummy.rotation.copy(rotation);
+    } else {
+      dummy.rotation.set(0, 0, 0);
     }
     dummy.updateMatrix();
     this.mesh.setMatrixAt(index, dummy.matrix);

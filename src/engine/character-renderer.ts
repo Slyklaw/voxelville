@@ -3,6 +3,7 @@ import { InstancedPool } from './instancing';
 import { getMaterial } from './materials';
 import { getVoxelGeometry } from './voxel-mesh';
 import { ALL_CHARACTER_MODELS } from '../models/characters';
+import { CharacterRenderState, getAnimationOffset } from '../simulation/character-state';
 
 export class CharacterRenderer {
   private scene: THREE.Scene;
@@ -137,5 +138,41 @@ export class CharacterRenderer {
    */
   getMeshes(): THREE.InstancedMesh[] {
     return Array.from(this.pools.values()).map(pool => pool.meshInstance);
+  }
+
+  /**
+   * Update character instance with animation offsets.
+   * Applies position interpolation, animation transforms, and rotation.
+   * @param modelId - The character model ID
+   * @param index - Instance index returned from addCharacter
+   * @param renderState - Interpolated render state with animation data
+   */
+  updateCharacterInstance(
+    modelId: string,
+    index: number,
+    renderState: CharacterRenderState,
+  ): void {
+    const pool = this.pools.get(modelId);
+    if (!pool) {
+      throw new Error(`Model not found: ${modelId}`);
+    }
+
+    // Get animation offset (Y-bob, etc.)
+    const offset = getAnimationOffset('idle', renderState.animationPhase);
+
+    // Set position with animation offset
+    this.dummy.position.copy(renderState.interpolatedPosition);
+    this.dummy.position.add(offset);
+
+    // Scale remains 1:1
+    this.dummy.scale.set(1, 1, 1);
+
+    // Apply Y-axis rotation from render state
+    this.dummy.rotation.set(0, renderState.interpolatedRotation, 0);
+
+    // Update matrix and push to instanced mesh
+    this.dummy.updateMatrix();
+    pool.meshInstance.setMatrixAt(index, this.dummy.matrix);
+    pool.meshInstance.instanceMatrix.needsUpdate = true;
   }
 }
