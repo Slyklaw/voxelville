@@ -5,7 +5,14 @@ import { getVoxelGeometry } from './engine/voxel-mesh';
 import { getMaterial } from './engine/materials';
 import { OrbitCamera } from './engine/camera';
 import { InstancedPool } from './engine/instancing';
+import { CharacterRenderer } from './engine/character-renderer';
 import { createWorld } from './simulation/world';
+import {
+  CharacterStateManager,
+  updateSimulation,
+} from './simulation/character-state';
+import { ALL_CHARACTER_MODELS } from './models/characters';
+import { SeededRNG } from './utils/rng';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -41,23 +48,75 @@ function App() {
       pools.set(colorName, pool);
     }
 
-    // Populate instances
+    // Populate terrain instances
     for (const tile of tiles) {
       const pool = pools.get(tile.color);
       if (!pool) continue;
       pool.addInstance(new THREE.Vector3(tile.x, tile.y, tile.z));
     }
 
-    // Add all pools to scene
+    // Add all terrain pools to scene
     for (const pool of pools.values()) {
       ctx.scene.add(pool.meshInstance);
     }
+
+    // Characters
+    const charRenderer = new CharacterRenderer(ctx.scene);
+    const stateManager = new CharacterStateManager();
+    const rng = new SeededRNG(42);
+
+    // Spawn some characters at random ground positions
+    for (let i = 0; i < 20; i++) {
+      const model = ALL_CHARACTER_MODELS[i % ALL_CHARACTER_MODELS.length];
+      const x = rng.nextInt(-8, 8);
+      const z = rng.nextInt(-8, 8);
+      const position = new THREE.Vector3(x, 0, z);
+      const index = charRenderer.addCharacter(model.id, position);
+      const entityId = i;
+      stateManager.createCharacter(entityId, model.id, position);
+      // Set the instance index in the sim state
+      const sim = stateManager.getCharacter(entityId);
+      if (sim) sim.instanceIndex = index;
+    }
+
+    // Simulate animation state changes
+    let simInterval: number | undefined;
+    function startSimulation(): void {
+      simInterval = window.setInterval(() => {
+        const animStates: Array<'idle' | 'walk' | 'work' | 'party'> = [
+          'idle', 'walk', 'work', 'party',
+        ];
+        for (const entityId of stateManager.getAllEntityIds()) {
+          const sim = stateManager.getCharacter(entityId);
+          if (!sim) continue;
+          const newAnim = animStates[Math.floor(Math.random() * animStates.length)];
+          // Slight random movement
+          const newX = sim.position.x + (rng.nextInt(-1, 1));
+          const newZ = sim.position.z + (rng.nextInt(-1, 1));
+          updateSimulation(sim, new THREE.Vector3(newX, 0, newZ), newAnim);
+        }
+      }, 250);
+    }
+    startSimulation();
 
     // Render loop
     let running = true;
     function animate(): void {
       if (!running) return;
       requestAnimationFrame(animate);
+
+      // Update character positions from interpolated render states
+      for (const entityId of stateManager.getAllEntityIds()) {
+        const renderState = stateManager.getRenderState(entityId);
+        const sim = stateManager.getCharacter(entityId);
+        if (!renderState || !sim) continue;
+        charRenderer.updateCharacterInstance(
+          sim.modelId,
+          sim.instanceIndex,
+          renderState,
+        );
+      }
+
       render(ctx);
     }
     animate();
@@ -65,7 +124,9 @@ function App() {
     // Cleanup on unmount
     return () => {
       running = false;
+      if (simInterval) clearInterval(simInterval);
       orbitCamera.dispose();
+      charRenderer.dispose();
       for (const pool of pools.values()) {
         ctx.scene.remove(pool.meshInstance);
         pool.dispose();
