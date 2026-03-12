@@ -21,9 +21,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 ### v1.1: Visual Polish
 
-- [ ] **Phase 7: Per-Instance Coloring** - Multi-voxel buildings/characters render with correct colors
+- [x] **Phase 7: Per-Instance Coloring** - Multi-voxel buildings/characters render with correct colors (completed 2026-03-11)
 - [x] **Phase 8: Cartoon Shader** - Outline shader and flat-shading lighting (completed 2026-03-12)
-- [ ] **Phase 9: Positioning & Terrain** - Buildings/characters above terrain, smooth terrain
+- [x] **Phase 9: Positioning & Terrain** - Buildings/characters above terrain, smooth terrain (completed 2026-03-12)
 
 ## Phase Details
 

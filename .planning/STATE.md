@@ -5,18 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
-**Current focus:** Phase 9: Positioning & Terrain
+**Current focus:** v1.1 Visual Polish — Complete
 
 ## Current Position
 
-Phase: 9 of 9 (Positioning & Terrain)
-Plan: 01 ready to execute
-Status: Plan created and verified ✓
-Last activity: 2026-03-12 — Phase 9 plan created (1 plan, 2 tasks)
+Phase: All complete (Phases 1-9)
+Plan: —
+Status: 🎉 v1.1 Visual Polish milestone complete
+Last activity: 2026-03-12 — Phase 9 complete, all v1.1 phases done
 
-Progress: ██████░░░░ (v1.1: 2/3 phases)
-
-Progress: ▓▓░░░░░░░░
+Progress: ██████████ (v1.1: 3/3 phases, v1.0: 6/6 phases)
 
 ## Performance Metrics
 
@@ -36,15 +34,14 @@ Progress: ▓▓░░░░░░░░
 | 6. Population Growth | 2 | ✓ Complete |
 
 **v1.1 Milestone:** Visual Polish (per-instance coloring, cartoon shader, positioning fixes)
-| Phase 09-positioning-terrain P01 | 8 | 2 tasks | 5 files |
 
-## Performance Metrics
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 7. Per-Instance Coloring | 1 | ✓ Complete |
+| 8. Cartoon Shader | 1 | ✓ Complete |
+| 9. Positioning & Terrain | 1 | ✓ Complete |
 
-**Execution Metrics:**
-| Phase | Plan | Duration | Tasks | Files | Completed |
-|-------|------|----------|-------|-------|-----------|
-| 07-per-instance-coloring | 01 | 8min | 2 | 2 | 2026-03-11 |
-| 08-cartoon-shader | 01 | 8min | 2 | 3 | 2026-03-12 |
+**Total plans completed (v1.0 + v1.1):** 17
 
 ## Accumulated Context
 
@@ -132,8 +129,17 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - App.tsx creates outline pairs for terrain, building, and character meshes
 - Outline meshes properly disposed on cleanup
 
+### Phase 9 Accomplishments
+
+- Fixed terrain noise bug: removed `rng.next()` from noise calculation
+- Added deterministic water tile pattern
+- Added `getTerrainHeight()` function for terrain-aware positioning
+- Buildings placed at terrain height (sitting on surface)
+- Characters spawned at terrain height (standing on surface)
+- Roads placed at terrain height + 0.5
+
 ## Session Continuity
 
 Last session: 2026-03-12
-Status: **Phase 8 complete, Phase 9 (Positioning & Terrain) pending**
+Status: **v1.1 Visual Polish milestone complete — all 9 phases done**
 Resume file: None
