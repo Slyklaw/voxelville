@@ -9,7 +9,7 @@ import { CharacterRenderer } from './engine/character-renderer';
 import { BuildingRenderer } from './engine/building-renderer';
 import { CharacterStateManager } from './simulation/character-state';
 import { RoadGrid } from './simulation/road-grid';
-import { createWorld } from './simulation/world';
+import { createWorld, getTerrainHeight } from './simulation/world';
 import { SimulationLoop, BuildingInstance } from './simulation/simulation-tick';
 import { MovementSystem } from './simulation/movement-system';
 import { ALL_CHARACTER_MODELS } from './models/characters';
@@ -76,12 +76,14 @@ function App() {
     // Build road cross
     for (let x = -10; x <= 10; x++) {
       roadGrid.placeRoad(x, 0);
-      buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, 0.5, 0));
+      const roadY = getTerrainHeight(world, x, 0) + 0.5;
+      buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, roadY, 0));
     }
     for (let z = -10; z <= 10; z++) {
       roadGrid.placeRoad(0, z);
       if (z !== 0) {
-        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(0, 0.5, z));
+        const roadY = getTerrainHeight(world, 0, z) + 0.5;
+        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(0, roadY, z));
       }
     }
 
@@ -95,11 +97,15 @@ function App() {
       cap: number,
       type: BuildingType,
     ): void {
-      buildingRenderer.addBuilding(modelId, pos);
+      // Adjust Y to sit on top of terrain
+      const terrainY = getTerrainHeight(world, Math.round(pos.x), Math.round(pos.z));
+      const adjustedPos = new THREE.Vector3(pos.x, terrainY, pos.z);
+
+      buildingRenderer.addBuilding(modelId, adjustedPos);
       buildingInstances.push({
         id: bid++,
         type,
-        position: pos.clone(),
+        position: adjustedPos.clone(),
         capacity: cap,
         occupancy: 0,
         modelId,
@@ -119,6 +125,7 @@ function App() {
     simLoop.setMovementSystem(movementSystem);
     simLoop.setRoadGrid(roadGrid);
     simLoop.setBuildingRenderer(buildingRenderer);
+    simLoop.setWorld(world);
     simLoop.start();
 
     // Spawn initial characters
@@ -126,7 +133,8 @@ function App() {
       const model = ALL_CHARACTER_MODELS[i % ALL_CHARACTER_MODELS.length];
       const x = rng.nextInt(-8, 8);
       const z = rng.nextInt(-8, 8);
-      const position = new THREE.Vector3(x, 0, z);
+      const terrainY = getTerrainHeight(world, x, z);
+      const position = new THREE.Vector3(x, terrainY, z);
       const index = charRenderer.addCharacter(model.id, position);
       stateManager.createCharacter(i, model.id, position);
       const sim = stateManager.getCharacter(i);

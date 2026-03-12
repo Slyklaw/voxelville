@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { RoadGrid } from './road-grid';
 import { BuildingRenderer } from '../engine/building-renderer';
 import { ALL_BUILDING_MODELS } from '../models/buildings';
+import { World, getTerrainHeight } from './world';
 
 // Building grid to track placed buildings: key is "x,z", value is modelId
 const buildingGrid = new Map<string, string>();
@@ -84,6 +85,7 @@ export function canPlaceBuilding(
  * @param buildingRenderer The BuildingRenderer to add the building to
  * @param roadGrid The road grid to check adjacency
  * @param buildingSize Optional building footprint [width, depth]
+ * @param world Optional World for terrain height lookup
  * @returns The instance index if placed, -1 if placement failed
  */
 export function placeBuilding(
@@ -93,6 +95,7 @@ export function placeBuilding(
   buildingRenderer: BuildingRenderer,
   roadGrid: RoadGrid,
   buildingSize?: [number, number],
+  world?: World,
 ): number {
   // Get building size from model if not provided
   let size = buildingSize;
@@ -112,8 +115,9 @@ export function placeBuilding(
 
   // Convert grid coordinates to world coordinates
   const worldX = gridX;
-  const worldY = 1; // Buildings sit on top of terrain
   const worldZ = gridZ;
+  // Use terrain height if world provided, otherwise fall back to y=1
+  const worldY = world ? getTerrainHeight(world, worldX, worldZ) : 1;
   const position = new THREE.Vector3(worldX, worldY, worldZ);
 
   // Add building to renderer

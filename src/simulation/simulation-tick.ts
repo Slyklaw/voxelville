@@ -10,6 +10,7 @@ import { Building, isHousing, isWorkplace, BuildingType } from './types';
 import { RoadGrid } from './road-grid';
 import { BuildingRenderer } from '../engine/building-renderer';
 import { ALL_BUILDING_MODELS } from '../models/buildings';
+import { World } from './world';
 
 /**
  * Building instance with full occupancy tracking for construction system
@@ -38,6 +39,7 @@ export class SimulationLoop {
   private tickCount = 0;
   private debugEnabled = false;
   private nextBuildingId = 0;
+  private world: World | null = null;
 
   constructor(
     stateManager: CharacterStateManager,
@@ -69,6 +71,13 @@ export class SimulationLoop {
    */
   setBuildingRenderer(buildingRenderer: BuildingRenderer): void {
     this.buildingRenderer = buildingRenderer;
+  }
+
+  /**
+   * Set world for terrain-aware building placement
+   */
+  setWorld(world: World): void {
+    this.world = world;
   }
 
   /**
@@ -246,6 +255,7 @@ export class SimulationLoop {
       this.roadGrid,
       this.buildingRenderer,
       this.rng,
+      this.world ?? undefined,
     );
 
     if (instanceIndex !== -1) {

@@ -7,6 +7,7 @@ import { RoadGrid } from './road-grid';
 import { BuildingRenderer } from '../engine/building-renderer';
 import { canPlaceBuilding, placeBuilding } from './grid-placement';
 import { ALL_BUILDING_MODELS } from '../models/buildings';
+import { World } from './world';
 
 /**
  * Growth system configuration
@@ -409,6 +410,7 @@ export function findBuildingPlacement(
  * @param roadGrid - Road grid for placement validation
  * @param buildingRenderer - Building renderer to add the building
  * @param rng - Seeded RNG for placement randomness
+ * @param world - World for terrain height lookup
  * @returns Instance index if successful, -1 if failed
  */
 export function autoConstructBuilding(
@@ -416,6 +418,7 @@ export function autoConstructBuilding(
   roadGrid: RoadGrid,
   buildingRenderer: BuildingRenderer,
   rng: SeededRNG,
+  world?: World,
 ): number {
   const placement = findBuildingPlacement(roadGrid, rng, buildingModelId);
   if (!placement) return -1;
@@ -423,6 +426,6 @@ export function autoConstructBuilding(
   const model = ALL_BUILDING_MODELS.find(m => m.id === buildingModelId);
   const size: [number, number] = model ? [model.size[0], model.size[2]] : [1, 1];
 
-  const instanceIndex = placeBuilding(placement.x, placement.z, buildingModelId, buildingRenderer, roadGrid, size);
+  const instanceIndex = placeBuilding(placement.x, placement.z, buildingModelId, buildingRenderer, roadGrid, size, world);
   return instanceIndex;
 }
