@@ -137,7 +137,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 08-01-PLAN.md — Create OutlineRenderer and wire two-pass rendering
+- [x] 08-01-PLAN.md — Create OutlineRenderer and wire two-pass rendering
 
 ### Phase 9: Positioning & Terrain
 **Goal**: Buildings and characters sit properly on terrain, terrain generates smoothly

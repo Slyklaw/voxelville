@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
-**Current focus:** Phase 8: Cartoon Shader
+**Current focus:** Phase 9: Positioning & Terrain
 
 ## Current Position
 
-Phase: 8 of 9 (Cartoon Shader)
-Plan: 01 complete ✓
-Status: Plan 01 completed — outline renderer wired
-Last activity: 2026-03-12 — Phase 8 plan 01 complete (2 tasks, 3 files)
+Phase: 9 of 9 (Positioning & Terrain)
+Plan: —
+Status: Ready for planning
+Last activity: 2026-03-12 — Phase 8 complete, advancing to Phase 9
 
 Progress: ▓▓░░░░░░░░
 
@@ -119,8 +119,16 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - Pool sizing: model.voxels.length * maxInstances for capacity
 - All update methods now update ALL voxel instances for buildings/characters
 
+### Phase 8 Accomplishments
+
+- OutlineRenderer class created with back-face technique (MeshBasicMaterial, BackSide, 1.08× scale)
+- renderer.ts exports MeshWithOutline, createOutlineFor(), renderWithOutlines()
+- Two-pass rendering: outlines first, then main meshes on top
+- App.tsx creates outline pairs for terrain, building, and character meshes
+- Outline meshes properly disposed on cleanup
+
 ## Session Continuity
 
 Last session: 2026-03-12
-Status: **Phase 8 complete, outline renderer implemented**
+Status: **Phase 8 complete, Phase 9 (Positioning & Terrain) pending**
 Resume file: None
