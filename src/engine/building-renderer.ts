@@ -4,6 +4,17 @@ import { getMaterial } from './materials';
 import { getVoxelGeometry } from './voxel-mesh';
 import { ALL_BUILDING_MODELS } from '../models/buildings';
 
+// Maximum number of instances per building type
+const MAX_INSTANCES_PER_BUILDING = 10;
+
+/**
+ * Convert a material name to THREE.Color for per-instance coloring
+ */
+function materialToColor(colorName: string): THREE.Color {
+  const material = getMaterial(colorName);
+  return material ? new THREE.Color(material.color) : new THREE.Color(0xffffff);
+}
+
 export class BuildingRenderer {
   private scene: THREE.Scene;
   private pools: Map<string, InstancedPool>;
@@ -20,15 +31,18 @@ export class BuildingRenderer {
   }
 
   private initPools(): void {
-    for (const model of ALL_BUILDING_MODELS) {
-      const primaryVoxel = model.voxels[0];
-      const material = getMaterial(primaryVoxel.color);
-      if (!material) {
-        console.warn(`Material not found for building model ${model.id}: ${primaryVoxel.color}`);
-        continue;
-      }
+    // Create neutral white material for all pools
+    // Individual voxel colors will be set via setColorAt()
+    const neutralMaterial = new THREE.MeshLambertMaterial({
+      color: 0xffffff,
+      flatShading: true,
+    });
 
-      const pool = new InstancedPool(this.geometry, material, 20);
+    for (const model of ALL_BUILDING_MODELS) {
+      // Pool size = voxels per model * max instances
+      const poolSize = model.voxels.length * MAX_INSTANCES_PER_BUILDING;
+
+      const pool = new InstancedPool(this.geometry, neutralMaterial, poolSize);
       this.scene.add(pool.meshInstance);
       this.pools.set(model.id, pool);
       this.instanceIndices.set(model.id, new Map());
@@ -41,10 +55,43 @@ export class BuildingRenderer {
       throw new Error(`Model not found: ${modelId}`);
     }
 
-    const index = pool.addInstance(position);
+    // Get model from ALL_BUILDING_MODELS
+    const model = ALL_BUILDING_MODELS.find(m => m.id === modelId);
+    if (!model) {
+      throw new Error(`Model definition not found: ${modelId}`);
+    }
+
     const indices = this.instanceIndices.get(modelId)!;
-    indices.set(index, (indices.get(index) || 0) + 1);
-    return index;
+
+    // Track the first instance index (for compatibility with existing callers)
+    let firstIndex = -1;
+
+    // Add each voxel as a separate instance with its correct color
+    for (const voxel of model.voxels) {
+      // Calculate world position: base position + voxel offset
+      const worldPos = new THREE.Vector3(
+        position.x + voxel.x,
+        position.y + voxel.y,
+        position.z + voxel.z,
+      );
+
+      // Add instance at voxel position
+      const instanceIndex = pool.addInstance(worldPos);
+
+      // Set per-instance color from voxel material
+      const color = materialToColor(voxel.color);
+      pool.meshInstance.setColorAt(instanceIndex, color);
+      pool.meshInstance.instanceColor!.needsUpdate = true;
+
+      // Track instance index
+      indices.set(instanceIndex, (indices.get(instanceIndex) || 0) + 1);
+
+      if (firstIndex === -1) {
+        firstIndex = instanceIndex;
+      }
+    }
+
+    return firstIndex;
   }
 
   updateBuilding(modelId: string, index: number, position: THREE.Vector3): void {
@@ -53,7 +100,22 @@ export class BuildingRenderer {
       throw new Error(`Model not found: ${modelId}`);
     }
 
-    pool.updateInstance(index, position);
+    const model = ALL_BUILDING_MODELS.find(m => m.id === modelId);
+    if (!model) {
+      throw new Error(`Model definition not found: ${modelId}`);
+    }
+
+    // Update all voxel instances for this building
+    // The index parameter is the first instance index
+    for (let i = 0; i < model.voxels.length; i++) {
+      const voxel = model.voxels[i];
+      const worldPos = new THREE.Vector3(
+        position.x + voxel.x,
+        position.y + voxel.y,
+        position.z + voxel.z,
+      );
+      pool.updateInstance(index + i, worldPos);
+    }
   }
 
   getPool(modelId: string): InstancedPool | undefined {
