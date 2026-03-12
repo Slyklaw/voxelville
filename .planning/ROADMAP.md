@@ -12,7 +12,7 @@ VoxelVille evolves from a basic Three.js renderer to a living autonomous city. T
 
 Decimal phases appear between their surrounding integers in numeric order.
 
-- [ ] **Phase 1: Engine Foundation** - Three.js renderer, camera, infrastructure
+- [x] **Phase 1: Engine Foundation** - Three.js renderer, camera, infrastructure
 - [ ] **Phase 2: Characters** - Animated character models with smooth movement
 - [ ] **Phase 3: Buildings** - Building models and grid placement
 - [ ] **Phase 4: Simulation** - Autonomous citizen behavior with needs and AI
@@ -32,9 +32,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01-PLAN.md — Project setup with Vite, TypeScript, Three.js, React, and Tailwind
-- [ ] 01-02-PLAN.md — InstancedMesh voxel renderer with seeded deterministic world generation
-- [ ] 01-03-PLAN.md — OrbitCamera with mouse controls and React canvas ref mounting
+- [x] 01-01-PLAN.md — Project setup with Vite, TypeScript, Three.js, React, and Tailwind
+- [x] 01-02-PLAN.md — InstancedMesh voxel renderer with seeded deterministic world generation
+- [x] 01-03-PLAN.md — OrbitCamera with mouse controls and React canvas ref mounting
 
 ### Phase 2: Characters
 **Goal**: Users can see animated characters in the voxel world with smooth movement
@@ -114,7 +114,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
-| 1. Engine Foundation | 0/3 | Not started | - |
+| 1. Engine Foundation | 3/3 | Complete | 2026-03-11 |
 | 2. Characters | 0/2 | Not started | - |
 | 3. Buildings | 0/2 | Not started | - |
 | 4. Simulation | 0/3 | Not started | - |

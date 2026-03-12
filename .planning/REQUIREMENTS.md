@@ -7,7 +7,7 @@
 
 ### Rendering
 
-- [ ] **REND-01**: Three.js renders voxel cubes with InstancedMesh batching (thousands of cubes at 60fps)
+- [x] **REND-01**: Three.js renders voxel cubes with InstancedMesh batching (thousands of cubes at 60fps)
 - [ ] **REND-02**: Character models defined (5 male, 5 female, 8 child variants with hair/skin/clothing)
 - [ ] **REND-03**: Building models defined (houses 3 variants, offices 2, stores 2, roads, parks, party halls, cleaning depots)
 - [ ] **REND-04**: Character animation states (idle, walk, work, party, clean, sleep, build) with interpolation between simulation ticks
@@ -28,14 +28,14 @@
 
 - [ ] **UI-01**: Play/Work slider — single React-controlled range input, only player input, applies ±30% weight bonus to task selection
 - [ ] **UI-02**: HUD overlay — population count, happiness meter, updated debounced (every 100ms)
-- [ ] **UI-03**: Isometric orbit camera — navigate the city view
+- [x] **UI-03**: Isometric orbit camera — navigate the city view
 
 ### Infrastructure
 
-- [ ] **INFRA-01**: Seeded deterministic world generation — same seed produces same terrain, same resident spawns
+- [x] **INFRA-01**: Seeded deterministic world generation — same seed produces same terrain, same resident spawns
 - [ ] **INFRA-02**: Simulation/render state separation — residents interpolate position between 4 ticks/sec and 60fps renders (no teleporting)
-- [ ] **INFRA-03**: React refs for Three.js canvas — React mounts canvas once, never re-renders it
-- [ ] **INFRA-04**: GPU memory disposal — shared geometry/material per model type, disposal registry for cleanup
+- [x] **INFRA-03**: React refs for Three.js canvas — React mounts canvas once, never re-renders it
+- [x] **INFRA-04**: GPU memory disposal — shared geometry/material per model type, disposal registry for cleanup
 
 ## v2 Requirements
 

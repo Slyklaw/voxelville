@@ -55,7 +55,10 @@ A city that lives without you. The joy is watching it happen — citizens bustli
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Browser-based (not Unity/Godot) | Zero install friction, runs in a tab | — Pending |
+| Browser-based (Three.js) | Zero install friction, runs in a tab | ✓ Validated — working renderer in Phase 1 |
+| InstancedMesh from day one | Thousands of cubes need batched draw calls | ✓ Validated — 60fps with 500+ voxels |
+| Seeded deterministic RNG | Same seed = same world for sharing | ✓ Validated — mulberry32 PRNG working |
+| React refs for canvas | Decouple Three.js render loop from React re-renders | ✓ Validated — canvas mounts once |
 | Custom ECS over existing lib | Lightweight simulation, full control over component layout | — Pending |
 | Custom VoxelMeshBuilder | Cartoony cubes need per-face color and rounded edges | — Pending |
 | Utility-based AI (not FSM) | More emergent behavior, slider integration via weighted scoring | — Pending |
