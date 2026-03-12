@@ -18,8 +18,33 @@ function initMaterials(): void {
   MATERIALS.set('water', createMaterial(0x4a90d9));
   MATERIALS.set('sand', createMaterial(0xf0d078));
   MATERIALS.set('dirt', createMaterial(0x8b6f47));
-  MATERIALS.set('stone', createMaterial(0x808080));
-  MATERIALS.set('wood', createMaterial(0x8b4513));
+    MATERIALS.set('stone', createMaterial(0x808080));
+    MATERIALS.set('wood', createMaterial(0x8b4513));
+
+    // Character colors
+    // Skin
+    MATERIALS.set('skin-light', createMaterial(0xFFDAB9));
+    MATERIALS.set('skin-dark', createMaterial(0xC68642));
+
+    // Hair
+    MATERIALS.set('hair-black', createMaterial(0x1A1A1A));
+    MATERIALS.set('hair-brown', createMaterial(0x5C3A21));
+    MATERIALS.set('hair-blond', createMaterial(0xF0D078));
+    MATERIALS.set('hair-red', createMaterial(0xB7410E));
+
+    // Clothing (light)
+    MATERIALS.set('clothing-blue', createMaterial(0x5B9BD5));
+    MATERIALS.set('clothing-green', createMaterial(0x70AD47));
+    MATERIALS.set('clothing-orange', createMaterial(0xED7D31));
+    MATERIALS.set('clothing-purple', createMaterial(0x9DC3E6));
+    MATERIALS.set('clothing-pink', createMaterial(0xFFB6C1));
+
+    // Clothing (dark)
+    MATERIALS.set('clothing-dark-1', createMaterial(0x3B3B3B));
+    MATERIALS.set('clothing-dark-2', createMaterial(0x2E4057));
+    MATERIALS.set('clothing-dark-3', createMaterial(0x4A4A4A));
+    MATERIALS.set('clothing-dark-4', createMaterial(0x3D3D3D));
+    MATERIALS.set('clothing-dark-5', createMaterial(0x4B4B4B));
 }
 
 export function getMaterial(colorName: string): THREE.MeshLambertMaterial | undefined {
