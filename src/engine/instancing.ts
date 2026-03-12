@@ -1,6 +1,12 @@
 import * as THREE from 'three';
 
 const dummy = new THREE.Object3D();
+const _white = new THREE.Color(1, 1, 1);
+
+export interface InstancedPoolOptions {
+  /** Pre-allocate instanceColor buffer. Required when using setColorAt(). */
+  withColors?: boolean;
+}
 
 export class InstancedPool {
   private mesh: THREE.InstancedMesh;
@@ -10,9 +16,19 @@ export class InstancedPool {
     geometry: THREE.BufferGeometry,
     material: THREE.Material,
     maxInstances: number,
+    options?: InstancedPoolOptions,
   ) {
     this.mesh = new THREE.InstancedMesh(geometry, material, maxInstances);
     this.mesh.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
+
+    // Pre-allocate instanceColor buffer BEFORE first render.
+    // This ensures the shader compiles with USE_INSTANCING_COLOR from the start,
+    // avoiding a Three.js r162 edge case where the attribute binding can fail
+    // when instanceColor transitions from null to non-null between renders.
+    if (options?.withColors) {
+      this.mesh.setColorAt(0, _white);
+      this.mesh.instanceColor!.needsUpdate = true;
+    }
   }
 
   get meshInstance(): THREE.InstancedMesh {

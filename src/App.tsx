@@ -189,7 +189,7 @@ function App() {
 
   return (
     <div className="w-full h-screen relative">
-      <canvas ref={canvasRef} className="block w-full h-full" />
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ zIndex: 0 }} />
       <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
         <h1 className="text-xl font-bold text-gray-800">VoxelVille</h1>
         <p className="text-sm text-gray-600">Drag to orbit · Scroll to zoom</p>

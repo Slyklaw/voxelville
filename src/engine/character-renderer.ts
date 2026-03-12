@@ -45,7 +45,7 @@ export class CharacterRenderer {
       // Pool size = voxels per model * max instances
       const poolSize = model.voxels.length * MAX_INSTANCES_PER_MODEL;
 
-      const pool = new InstancedPool(this.geometry, neutralMaterial, poolSize);
+      const pool = new InstancedPool(this.geometry, neutralMaterial, poolSize, { withColors: true });
       this.scene.add(pool.meshInstance);
       this.pools.set(model.id, pool);
       this.instanceIndices.set(model.id, new Map());

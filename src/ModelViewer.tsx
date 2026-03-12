@@ -64,11 +64,16 @@ export function ModelViewer() {
   const safeIndex = filteredIndex >= 0 ? filteredIndex : 0;
 
   const clearModel = useCallback(() => {
+    const ctx = ctxRef.current;
     if (outlineRef.current) {
       outlineRef.current.outline.dispose();
       outlineRef.current = null;
     }
     if (poolRef.current) {
+      // Remove mesh from scene before disposing
+      if (ctx) {
+        ctx.scene.remove(poolRef.current.meshInstance);
+      }
       poolRef.current.dispose();
       poolRef.current = null;
     }
@@ -88,7 +93,7 @@ export function ModelViewer() {
     });
 
     const geometry = getVoxelGeometry();
-    const pool = new InstancedPool(geometry, neutralMaterial, model.voxels.length);
+    const pool = new InstancedPool(geometry, neutralMaterial, model.voxels.length, { withColors: true });
 
     // Center the model at origin
     const centerX = (model.size[0] - 1) / 2;
@@ -145,7 +150,7 @@ export function ModelViewer() {
     const camera = new OrbitCamera(ctx.camera, canvas);
     cameraRef.current = camera;
 
-    // Start render loop — always render even before model is loaded
+    // Start render loop
     function animate() {
       animRef.current = requestAnimationFrame(animate);
       if (ctxRef.current && outlineRef.current) {
@@ -210,7 +215,7 @@ export function ModelViewer() {
 
   return (
     <div className="w-full h-screen relative">
-      <canvas ref={canvasRef} className="block w-full h-full" />
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" style={{ zIndex: 0 }} />
       
       {/* Top-left: Title and Filter */}
       <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm rounded-lg px-4 py-3 shadow-lg">
