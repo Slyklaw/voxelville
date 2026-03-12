@@ -16,7 +16,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 2: Characters** - Animated character models with smooth movement
 - [x] **Phase 3: Buildings** - Building models and grid placement
 - [x] **Phase 4: Simulation** - Autonomous citizen behavior with needs and AI
-- [ ] **Phase 5: UI Controls** - Play/Work slider and city statistics HUD
+- [x] **Phase 5: UI Controls** - Play/Work slider and city statistics HUD
 - [ ] **Phase 6: Population Growth** - Automatic city growth and expansion
 
 ## Phase Details

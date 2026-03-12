@@ -5,14 +5,14 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
-**Current focus:** Phase 5: UI Controls
+**Current focus:** Phase 6: Population Growth
 
 ## Current Position
 
-Phase: 5 of 6 (UI Controls)
+Phase: 6 of 6 (Population Growth)
 Plan: 0 of 2 in current phase
-Status: Ready to plan
-Last activity: 2026-03-11 — Phase 4 complete, all 3 plans executed
+Status: Plans ready for execution
+Last activity: 2026-03-11 — Phase 6 plans created, ready for /gsd-execute-phase
 
 Progress: [██████░░░░] 67%
 
