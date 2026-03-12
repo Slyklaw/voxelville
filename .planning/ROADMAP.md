@@ -13,7 +13,7 @@ VoxelVille evolves from a basic Three.js renderer to a living autonomous city. T
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Engine Foundation** - Three.js renderer, camera, infrastructure
-- [ ] **Phase 2: Characters** - Animated character models with smooth movement
+- [x] **Phase 2: Characters** - Animated character models with smooth movement
 - [ ] **Phase 3: Buildings** - Building models and grid placement
 - [ ] **Phase 4: Simulation** - Autonomous citizen behavior with needs and AI
 - [ ] **Phase 5: UI Controls** - Play/Work slider and city statistics HUD
@@ -47,8 +47,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 02-01: Character model definitions and instancing pools (5 male, 5 female, 8 child)
-- [ ] 02-02: Animation system with state interpolation and simulation/render separation
+- [x] 02-01-PLAN.md — Character model definitions and instancing pools (5 male, 5 female, 8 child)
+- [x] 02-02-PLAN.md — Animation system with state interpolation and simulation/render separation
 
 ### Phase 3: Buildings
 **Goal**: Users can see buildings placed in the voxel world
@@ -115,7 +115,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Engine Foundation | 3/3 | Complete | 2026-03-11 |
-| 2. Characters | 0/2 | Not started | - |
+| 2. Characters | 2/2 | Complete | 2026-03-11 |
 | 3. Buildings | 0/2 | Not started | - |
 | 4. Simulation | 0/3 | Not started | - |
 | 5. UI Controls | 0/2 | Not started | - |
