@@ -145,11 +145,13 @@ export function ModelViewer() {
     const camera = new OrbitCamera(ctx.camera, canvas);
     cameraRef.current = camera;
 
-    // Start render loop
+    // Start render loop — always render even before model is loaded
     function animate() {
       animRef.current = requestAnimationFrame(animate);
-      if (outlineRef.current && ctxRef.current) {
+      if (ctxRef.current && outlineRef.current) {
         renderWithOutlines(ctxRef.current, [outlineRef.current]);
+      } else if (ctxRef.current) {
+        ctxRef.current.renderer.render(ctxRef.current.scene, ctxRef.current.camera);
       }
     }
     animate();
