@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
-**Current focus:** v1.1 Visual Polish — Complete
+**Current focus:** v1.2 Visual Verification & Tests — Defining requirements
 
 ## Current Position
 
-Phase: All complete (Phases 1-9)
+Phase: 10 (defining requirements, about to start)
 Plan: —
-Status: 🎉 v1.1 Visual Polish milestone complete
-Last activity: 2026-03-12 — Phase 9 complete, all v1.1 phases done
+Status: Defining requirements for v1.2
+Last activity: 2026-03-12 — Milestone v1.2 started
 
-Progress: ██████████ (v1.1: 3/3 phases, v1.0: 6/6 phases)
+Progress: ░░░░░░░░░░ (v1.2: 0/1 phases)
 
 ## Performance Metrics
 
@@ -42,6 +42,12 @@ Progress: ██████████ (v1.1: 3/3 phases, v1.0: 6/6 phases)
 | 9. Positioning & Terrain | 1 | ✓ Complete |
 
 **Total plans completed (v1.0 + v1.1):** 17
+
+**v1.2 Milestone:** Visual Verification & Tests (20 comprehensive test requirements)
+
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 10. Visual Verification Tests | 0 | ○ Not started |
 
 ## Accumulated Context
 

@@ -25,6 +25,10 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 8: Cartoon Shader** - Outline shader and flat-shading lighting (completed 2026-03-12)
 - [x] **Phase 9: Positioning & Terrain** - Buildings/characters above terrain, smooth terrain (completed 2026-03-12)
 
+### v1.2: Visual Verification & Tests
+
+- [ ] **Phase 10: Visual Verification Tests** - Comprehensive tests to identify rendering bugs
+
 ## Phase Details
 
 ### Phase 1: Engine Foundation
@@ -150,7 +154,19 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 09-01-PLAN.md — Fix terrain noise bug and position buildings/characters on terrain
+- [x] 09-01-PLAN.md — Fix terrain noise bug and position buildings/characters on terrain
+
+### Phase 10: Visual Verification Tests
+**Goal**: Create comprehensive test suite that verifies model definitions, materials, and renderer output to isolate rendering bugs
+**Depends on**: Phase 9
+**Requirements**: VIZ-01 through VIZ-20
+**Success Criteria** (what must be TRUE):
+  1. Tests verify all 13 building models have correct voxel counts and material references
+  2. Tests verify all 18 character models have correct voxel structure (12/9 voxels, hair/skin/clothing rows)
+  3. Tests verify all material definitions return valid THREE.Color values
+  4. Tests verify BuildingRenderer creates correct number of instances with correct colors
+  5. Tests verify CharacterRenderer creates correct instances with correct colors
+**Plans**: TBD (tests to be written)
 
 ## Progress
 
@@ -170,4 +186,8 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | 7. Per-Instance Coloring | 1/1 | Complete | 2026-03-11 |
 | 8. Cartoon Shader | 1/1 | Complete   | 2026-03-12 |
-| 9. Positioning & Terrain | 0/1 | Not started | - |
+| 9. Positioning & Terrain | 1/1 | Complete | 2026-03-12 |
+
+### v1.2: Visual Verification & Tests
+
+| 10. Visual Verification Tests | 0 | Not started | - |

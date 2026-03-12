@@ -8,15 +8,16 @@ VoxelVille is a single-screen, browser-based city builder where a cartoony voxel
 
 A city that lives without you. The joy is watching it happen — citizens bustling to jobs, kids chasing each other, parties erupting on rooftops. If the autonomous simulation doesn't feel alive, nothing else matters.
 
-## Current Milestone: v1.1 Visual Polish
+## Current Milestone: v1.2 Visual Verification & Tests
 
-**Goal:** Fix rendering pipeline so buildings, characters, and terrain render correctly with proper colors and cartoon aesthetic.
+**Goal:** Write comprehensive tests to identify and fix rendering issues where voxel models appear scrambled/wrong colors in the viewport.
 
 **Target features:**
-- Per-instance voxel coloring (InstancedMesh.setColorAt)
-- Cartoon outline shader (back-face pass)
-- Correct building/character positions above terrain
-- Smooth terrain generation without holes
+- Unit tests for voxel model definitions (correct colors, positions, dimensions)
+- Integration tests for renderer output verification
+- Visual regression tests comparing expected vs actual model appearance
+- Test infrastructure for snapshot-based rendering verification
+- Fix any identified rendering bugs found by tests
 
 ## Requirements
 
@@ -27,20 +28,12 @@ A city that lives without you. The joy is watching it happen — citizens bustli
 
 ### Active
 
-- [ ] Per-instance coloring for multi-voxel buildings and characters
-- [ ] Cartoon outline shader with back-face render pass
-- [ ] Building Y-positioning above terrain surface
-- [ ] Smooth terrain noise generation
-- [ ] Utility-based AI task selection with personality and slider weighting
-- [ ] Play/Work slider that nudges task selection and build priority
-- [ ] Population growth with housing/job assignment
-- [ ] Building types: houses (3 variants), offices (2), stores (2), roads, parks, party halls, cleaning depots
-- [ ] Character types: adult male (5 variants), adult female (5), child (8)
-- [ ] Animation states: idle, walk, work, party, clean, sleep, build
-- [ ] Three.js rendering with instanced mesh batching and cartoon shader
-- [ ] Isometric orbit camera
-- [ ] HUD overlay showing population and happiness
-- [ ] Deterministic seeded world generation
+- [ ] Write unit tests for voxel model definitions (VIZ-01 through VIZ-05)
+- [ ] Write unit tests for material colors (VIZ-06 through VIZ-09)
+- [ ] Write unit tests for renderer output (VIZ-10 through VIZ-13)
+- [ ] Write unit tests for positioning (VIZ-14 through VIZ-17)
+- [ ] Write unit tests for rendering pipeline (VIZ-18 through VIZ-20)
+- [ ] Fix rendering bugs identified by tests
 
 ### Out of Scope
 
@@ -57,6 +50,7 @@ A city that lives without you. The joy is watching it happen — citizens bustli
 - ECS architecture with utility-based AI for autonomous citizen behavior
 - MagicaVoxel `.vox` files for assets, converted to Three.js mesh at load time
 - Performance targets: 60fps, ≤500 residents, ≤100k voxels rendered
+- **Screenshot analysis (v1.2 motivation):** The viewport shows scrambled model rendering - buildings appear as solid colored blobs without proper per-voxel coloring, character models are unrecognizable blocks, and some models appear completely black/gray. Tests needed to isolate whether the issue is in model definitions, material mapping, or renderer instancing.
 
 ## Constraints
 
@@ -82,4 +76,4 @@ A city that lives without you. The joy is watching it happen — citizens bustli
 | Terrain/building positioning | Buildings must sit on top of terrain surface | — v1.1 Phase 9 |
 
 ---
-*Last updated: 2026-03-11 after initialization*
+*Last updated: 2026-03-11 after v1.2 milestone initialization*
