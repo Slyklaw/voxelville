@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 8 of 9 (Cartoon Shader)
-Plan: 01 ready to execute
-Status: Plan created and verified ✓
-Last activity: 2026-03-12 — Phase 8 plan created (1 plan, 2 tasks)
+Plan: 01 complete ✓
+Status: Plan 01 completed — outline renderer wired
+Last activity: 2026-03-12 — Phase 8 plan 01 complete (2 tasks, 3 files)
 
-Progress: ░░░░░░░░░░
+Progress: ▓▓░░░░░░░░
 
 ## Performance Metrics
 
@@ -41,6 +41,7 @@ Progress: ░░░░░░░░░░
 | Phase | Plan | Duration | Tasks | Files | Completed |
 |-------|------|----------|-------|-------|-----------|
 | 07-per-instance-coloring | 01 | 8min | 2 | 2 | 2026-03-11 |
+| 08-cartoon-shader | 01 | 8min | 2 | 3 | 2026-03-12 |
 
 ## Accumulated Context
 
@@ -120,6 +121,6 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 
 ## Session Continuity
 
-Last session: 2026-03-11
-Status: **v1.0 complete, v1.1 starting** — visual polish milestone
+Last session: 2026-03-12
+Status: **Phase 8 complete, outline renderer implemented**
 Resume file: None

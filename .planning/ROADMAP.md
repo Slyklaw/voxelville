@@ -22,7 +22,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 ### v1.1: Visual Polish
 
 - [ ] **Phase 7: Per-Instance Coloring** - Multi-voxel buildings/characters render with correct colors
-- [ ] **Phase 8: Cartoon Shader** - Outline shader and flat-shading lighting
+- [x] **Phase 8: Cartoon Shader** - Outline shader and flat-shading lighting (completed 2026-03-12)
 - [ ] **Phase 9: Positioning & Terrain** - Buildings/characters above terrain, smooth terrain
 
 ## Phase Details
@@ -166,5 +166,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 ### v1.1: Visual Polish
 
 | 7. Per-Instance Coloring | 1/1 | Complete | 2026-03-11 |
-| 8. Cartoon Shader | 0/2 | Not started | - |
+| 8. Cartoon Shader | 1/1 | Complete   | 2026-03-12 |
 | 9. Positioning & Terrain | 0/3 | Not started | - |
