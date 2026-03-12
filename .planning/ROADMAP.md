@@ -147,7 +147,10 @@ Plans:
   1. User can see buildings sitting on top of terrain (not buried inside hills)
   2. User can see characters standing on terrain surface (not underground or floating)
   3. User can see smooth terrain with no random holes (deterministic heightmap)
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 09-01-PLAN.md — Fix terrain noise bug and position buildings/characters on terrain
 
 ## Progress
 
@@ -167,4 +170,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 | 7. Per-Instance Coloring | 1/1 | Complete | 2026-03-11 |
 | 8. Cartoon Shader | 1/1 | Complete   | 2026-03-12 |
-| 9. Positioning & Terrain | 0/3 | Not started | - |
+| 9. Positioning & Terrain | 0/1 | Not started | - |
