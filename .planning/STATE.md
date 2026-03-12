@@ -36,6 +36,7 @@ Progress: ▓▓░░░░░░░░
 | 6. Population Growth | 2 | ✓ Complete |
 
 **v1.1 Milestone:** Visual Polish (per-instance coloring, cartoon shader, positioning fixes)
+| Phase 09-positioning-terrain P01 | 8 | 2 tasks | 5 files |
 
 ## Performance Metrics
 
@@ -62,6 +63,8 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - [Phase 4]: Utility scoring: 40% needs, 30% personality, 30% proximity
 - [Phase 4]: A* pathfinding with 1-second cache on RoadGrid (time-sliced for performance)
 - [Phase 7]: Per-instance coloring via neutral white material + setColorAt() per-voxel
+- [Phase 09-positioning-terrain]: Fixed terrain noise to use deterministic calculation without rng.next() inside noise function
+- [Phase 09-positioning-terrain]: Added getTerrainHeight() for entity positioning on terrain surface
 
 ### Phase 1 Accomplishments
 

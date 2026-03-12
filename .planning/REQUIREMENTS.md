@@ -28,12 +28,12 @@ Requirements for visual polish milestone. Each maps to roadmap phases.
 
 ### Positioning
 
-- [ ] **VIS-06**: Buildings placed on top of terrain surface, not embedded inside
-- [ ] **VIS-07**: Characters spawn standing on terrain surface
+- [x] **VIS-06**: Buildings placed on top of terrain surface, not embedded inside
+- [x] **VIS-07**: Characters spawn standing on terrain surface
 
 ### Terrain
 
-- [ ] **VIS-08**: Smooth terrain generation without random per-tile holes
+- [x] **VIS-08**: Smooth terrain generation without random per-tile holes
 
 ## v2 Requirements
 
@@ -78,9 +78,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | VIS-03 | Phase 7 | Pending |
 | VIS-04 | Phase 8 | Pending |
 | VIS-05 | Phase 8 | Pending |
-| VIS-06 | Phase 9 | Pending |
-| VIS-07 | Phase 9 | Pending |
-| VIS-08 | Phase 9 | Pending |
+| VIS-06 | Phase 9 | Complete |
+| VIS-07 | Phase 9 | Complete |
+| VIS-08 | Phase 9 | Complete |
 
 **Coverage:**
 - v1.1 requirements: 8 total
