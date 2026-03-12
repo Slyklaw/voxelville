@@ -1,8 +1,12 @@
-import { Building, isHousing, isWorkplace, hasVacancy } from './types';
+import { Building, isHousing, isWorkplace, hasVacancy, BuildingType } from './types';
 import { CharacterStateManager } from './character-state';
 import { SeededRNG } from '../utils/rng';
 import { uiState } from '../ui/ui-state';
 import { ALL_CHARACTER_MODELS } from '../models/characters';
+import { RoadGrid } from './road-grid';
+import { BuildingRenderer } from '../engine/building-renderer';
+import { canPlaceBuilding, placeBuilding } from './grid-placement';
+import { ALL_BUILDING_MODELS } from '../models/buildings';
 
 /**
  * Growth system configuration
@@ -14,7 +18,27 @@ export const GROWTH_CONFIG = {
   happinessThreshold: 0.6,
   /** Chance of spawning when conditions met (prevents clustering) */
   spawnChance: 0.8,
+  /** Ticks between construction checks (240 ticks = 60 seconds at 4 ticks/sec) */
+  constructionInterval: 240,
 };
+
+/**
+ * Building demand interface
+ */
+export interface BuildingDemand {
+  type: 'housing' | 'workplace' | 'leisure';
+  urgency: number; // 0-1, higher = more urgent
+  shortage: number; // absolute shortage count
+}
+
+/**
+ * Building type with priority weight
+ */
+interface WeightedBuildingType {
+  modelId: string;
+  type: BuildingType;
+  priority: number;
+}
 
 /**
  * Calculate total housing vacancy across all houses
@@ -192,4 +216,213 @@ export function checkAndSpawn(
   }
 
   return -1;
+}
+
+/**
+ * Compute building demand based on population and existing buildings
+ * @param population - Current population count
+ * @param buildings - Array of buildings
+ * @returns Array of demands sorted by urgency * priority
+ */
+export function computeBuildingDemand(population: number, buildings: Building[]): BuildingDemand[] {
+  const demands: BuildingDemand[] = [];
+
+  // Housing demand: residents vs total house capacity
+  let totalHouseCapacity = 0;
+  for (const building of buildings) {
+    if (isHousing(building)) {
+      totalHouseCapacity += building.capacity;
+    }
+  }
+  const housingShortage = Math.max(0, population - totalHouseCapacity);
+  const housingUrgency = housingShortage > 0 ? Math.min(1, housingShortage / population) : 0;
+
+  if (housingUrgency > 0) {
+    demands.push({
+      type: 'housing',
+      urgency: housingUrgency,
+      shortage: housingShortage,
+    });
+  }
+
+  // Workplace demand: residents vs total workplace capacity
+  let totalWorkplaceCapacity = 0;
+  for (const building of buildings) {
+    if (isWorkplace(building)) {
+      totalWorkplaceCapacity += building.capacity;
+    }
+  }
+  const workplaceShortage = Math.max(0, population - totalWorkplaceCapacity);
+  const workplaceUrgency = workplaceShortage > 0 ? Math.min(1, workplaceShortage / population) : 0;
+
+  if (workplaceUrgency > 0) {
+    demands.push({
+      type: 'workplace',
+      urgency: workplaceUrgency,
+      shortage: workplaceShortage,
+    });
+  }
+
+  // Leisure demand: residents vs parks + party halls
+  const leisureBuildings = buildings.filter(b => b.type === 'park' || b.type === 'party_hall');
+  const leisureCount = Math.max(1, leisureBuildings.length);
+  const residentsPerLeisure = population / leisureCount;
+  // Target: 1 leisure building per 10 residents
+  const leisureUrgency = residentsPerLeisure > 10 ? Math.min(1, (residentsPerLeisure - 10) / 40) : 0;
+
+  if (leisureUrgency > 0) {
+    demands.push({
+      type: 'leisure',
+      urgency: leisureUrgency,
+      shortage: Math.ceil((population - leisureCount * 10) / 10),
+    });
+  }
+
+  // Sort by urgency descending
+  demands.sort((a, b) => b.urgency - a.urgency);
+  return demands;
+}
+
+/**
+ * Get all building models for specific building types
+ */
+function getBuildingModelsForTypes(types: BuildingType[]): typeof ALL_BUILDING_MODELS {
+  return ALL_BUILDING_MODELS.filter(m => {
+    // Filter out roads and type guards for valid building types
+    if (m.type === 'road') return false;
+    return types.includes(m.type as BuildingType);
+  });
+}
+
+/**
+ * Select building type to construct based on demand and slider priorities
+ * @param demands - Array of building demands from computeBuildingDemand
+ * @returns The selected building type with model ID
+ */
+export function selectBuildingToConstruct(demands: BuildingDemand[]): WeightedBuildingType | null {
+  if (demands.length === 0) return null;
+
+  const sliderValue = uiState.sliderValue;
+
+  // Get housing building types (houses)
+  const houseModels = getBuildingModelsForTypes(['house']);
+  // Get workplace building types (offices, stores)
+  const workplaceModels = getBuildingModelsForTypes(['office', 'store']);
+  // Get leisure building types (parks, party halls)
+  const leisureModels = getBuildingModelsForTypes(['park', 'party_hall']);
+
+  // Build weighted list based on demand
+  const weightedTypes: WeightedBuildingType[] = [];
+
+  for (const demand of demands) {
+    let priority = 1.0;
+
+    if (demand.type === 'housing') {
+      // Housing doesn't use slider - always same priority
+      priority = 1.0;
+      for (const model of houseModels) {
+        weightedTypes.push({
+          modelId: model.id,
+          type: model.type as BuildingType,
+          priority: demand.urgency * priority,
+        });
+      }
+    } else if (demand.type === 'workplace') {
+      // Office/store priorities: 0.7 + (0.6 * sliderValue)
+      priority = 0.7 + (0.6 * sliderValue);
+      for (const model of workplaceModels) {
+        weightedTypes.push({
+          modelId: model.id,
+          type: model.type as BuildingType,
+          priority: demand.urgency * priority,
+        });
+      }
+    } else if (demand.type === 'leisure') {
+      // Park/partyhall priorities: 0.7 + (0.6 * (1 - sliderValue))
+      priority = 0.7 + (0.6 * (1 - sliderValue));
+      for (const model of leisureModels) {
+        weightedTypes.push({
+          modelId: model.id,
+          type: model.type as BuildingType,
+          priority: demand.urgency * priority,
+        });
+      }
+    }
+  }
+
+  if (weightedTypes.length === 0) return null;
+
+  // Sort by priority descending
+  weightedTypes.sort((a, b) => b.priority - a.priority);
+
+  // Return highest priority (or could use weighted random for variety)
+  return weightedTypes[0];
+}
+
+/**
+ * Find valid placement for a building near a road
+ * @param roadGrid - Road grid to find adjacent cells
+ * @param rng - Seeded RNG for randomness
+ * @param buildingModelId - Building model ID to check size
+ * @returns Grid coordinates or null if no valid placement
+ */
+export function findBuildingPlacement(
+  roadGrid: RoadGrid,
+  rng: SeededRNG,
+  buildingModelId: string,
+): { x: number; z: number } | null {
+  const roads = roadGrid.getAllTiles();
+  if (roads.length === 0) return null;
+
+  // Shuffle roads for randomness
+  const shuffled = rng.shuffle([...roads]);
+
+  for (const road of shuffled) {
+    // Check adjacent cells (N/S/E/W)
+    const adjacentCells = [
+      { x: road.x, z: road.z - 1 }, // north
+      { x: road.x, z: road.z + 1 }, // south
+      { x: road.x + 1, z: road.z }, // east
+      { x: road.x - 1, z: road.z }, // west
+    ];
+
+    // Shuffle adjacent cells for randomness
+    const shuffledAdjacent = rng.shuffle([...adjacentCells]);
+
+    for (const cell of shuffledAdjacent) {
+      // Check if this cell is valid for placement
+      const model = ALL_BUILDING_MODELS.find(m => m.id === buildingModelId);
+      const size: [number, number] = model ? [model.size[0], model.size[2]] : [1, 1];
+
+      if (canPlaceBuilding(cell.x, cell.z, roadGrid, size)) {
+        return { x: cell.x, z: cell.z };
+      }
+    }
+  }
+
+  return null;
+}
+
+/**
+ * Auto-construct a building at a valid location
+ * @param buildingModelId - The building model ID to construct
+ * @param roadGrid - Road grid for placement validation
+ * @param buildingRenderer - Building renderer to add the building
+ * @param rng - Seeded RNG for placement randomness
+ * @returns Instance index if successful, -1 if failed
+ */
+export function autoConstructBuilding(
+  buildingModelId: string,
+  roadGrid: RoadGrid,
+  buildingRenderer: BuildingRenderer,
+  rng: SeededRNG,
+): number {
+  const placement = findBuildingPlacement(roadGrid, rng, buildingModelId);
+  if (!placement) return -1;
+
+  const model = ALL_BUILDING_MODELS.find(m => m.id === buildingModelId);
+  const size: [number, number] = model ? [model.size[0], model.size[2]] : [1, 1];
+
+  const instanceIndex = placeBuilding(placement.x, placement.z, buildingModelId, buildingRenderer, roadGrid, size);
+  return instanceIndex;
 }

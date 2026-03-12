@@ -21,6 +21,16 @@ export class SeededRNG {
   pick<T>(arr: T[]): T {
     return arr[this.nextInt(0, arr.length - 1)];
   }
+
+  shuffle<T>(arr: T[]): T[] {
+    // Fisher-Yates shuffle
+    const shuffled = [...arr];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = this.nextInt(0, i);
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+    return shuffled;
+  }
 }
 
 export function createRNG(seed: number): SeededRNG {
