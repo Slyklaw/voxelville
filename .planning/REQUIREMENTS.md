@@ -3,55 +3,41 @@
 **Defined:** 2026-03-11
 **Core Value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
 
-## v1 Requirements
+## Current Milestone: v1.1 Visual Polish
 
-### Rendering
+**Goal:** Fix rendering pipeline so buildings, characters, and terrain render correctly with proper colors and cartoon aesthetic.
 
-- [x] **REND-01**: Three.js renders voxel cubes with InstancedMesh batching (thousands of cubes at 60fps)
-- [x] **REND-02**: Character models defined (5 male, 5 female, 8 child variants with hair/skin/clothing)
-- [x] **REND-03**: Building models defined (houses 3 variants, offices 2, stores 2, roads, parks, party halls, cleaning depots)
-- [x] **REND-04**: Character animation states (idle, walk, work, party, clean, sleep, build) with interpolation between simulation ticks
+## v1 Requirements (shipped in v1.0)
 
-### Simulation
+All 17 requirements from v1.0 are complete.
 
-- [x] **SIM-01**: Needs system — each resident has hunger, energy, social, hygiene that decay over time
-- [x] **SIM-02**: Utility-based AI task selection — residents score available tasks using needs, personality, proximity, and slider weighting
-- [x] **SIM-03**: A* pathfinding on road grid — residents navigate between buildings using road network
+## v1.1 Requirements
 
-### Growth
+Requirements for visual polish milestone. Each maps to roadmap phases.
 
-- [x] **GROW-01**: Population growth — new residents spawn when housing vacancy > 0 and city happiness exceeds threshold
-- [x] **GROW-02**: Auto-construction — buildings placed automatically when population demands (AI mayor logic)
-- [x] **GROW-03**: Play/Work slider influences build priority — more Work = faster offices/stores, more Play = faster parks/party halls
+### Coloring
 
-### UI
+- [ ] **VIS-01**: Buildings render all voxels with correct colors (walls, roof, windows, doors)
+- [ ] **VIS-02**: Characters render all voxels with correct hair, skin, and clothing colors
+- [ ] **VIS-03**: InstancedMesh.setColorAt() used for per-instance coloring
 
-- [x] **UI-01**: Play/Work slider — single React-controlled range input, only player input, applies ±15% weight bonus to task selection
-- [x] **UI-02**: HUD overlay — population count, happiness meter, updated debounced (every 100ms)
-- [x] **UI-03**: Isometric orbit camera — navigate the city view
+### Shader
 
-### Infrastructure
+- [ ] **VIS-04**: Cartoon outline shader via back-face render pass
+- [ ] **VIS-05**: Flat shading with two-step lighting (lit/shadow) per voxel face
 
-- [x] **INFRA-01**: Seeded deterministic world generation — same seed produces same terrain, same resident spawns
-- [x] **INFRA-02**: Simulation/render state separation — residents interpolate position between 4 ticks/sec and 60fps renders (no teleporting)
-- [x] **INFRA-03**: React refs for Three.js canvas — React mounts canvas once, never re-renders it
-- [x] **INFRA-04**: GPU memory disposal — shared geometry/material per model type, disposal registry for cleanup
+### Positioning
+
+- [ ] **VIS-06**: Buildings placed on top of terrain surface, not embedded inside
+- [ ] **VIS-07**: Characters spawn standing on terrain surface
+
+### Terrain
+
+- [ ] **VIS-08**: Smooth terrain generation without random per-tile holes
 
 ## v2 Requirements
 
 Deferred to future release. Tracked but not in current roadmap.
-
-### Visual Polish
-
-- **POL-01**: Cartoon shader (flat color + outline) for toy-like aesthetic
-- **POL-02**: Particle effects (construction puff, party confetti)
-- **POL-03**: Sound effects (ambient city sounds, construction sounds)
-
-### Content
-
-- **CONT-01**: Building variants (3 house designs, 2 office designs, 2 store designs) — full models
-- **CONT-02**: Character animation variety (all 7 states fully animated)
-- **CONT-03**: Additional building types (more specialized)
 
 ### Features
 
@@ -59,6 +45,12 @@ Deferred to future release. Tracked but not in current roadmap.
 - **FEAT-02**: Seasons / weather visual changes
 - **FEAT-03**: Screenshot / GIF export for sharing
 - **FEAT-04**: Save/load system
+
+### Content
+
+- **CONT-01**: Building variants (3 house designs, 2 office designs, 2 store designs) — full models
+- **CONT-02**: Character animation variety (all 7 states fully animated)
+- **CONT-03**: Additional building types (more specialized)
 
 ## Out of Scope
 
@@ -81,38 +73,20 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REND-01 | Phase 1 | Complete |
-| REND-02 | Phase 2 | Complete |
-| REND-03 | Phase 3 | Complete |
-| REND-04 | Phase 2 | Complete |
-| SIM-01 | Phase 4 | Complete |
-| SIM-02 | Phase 4 | Complete |
-| SIM-03 | Phase 4 | Complete |
-| GROW-01 | Phase 6 | Complete |
-| GROW-02 | Phase 6 | Complete |
-| GROW-03 | Phase 5 | Complete |
-| UI-01 | Phase 5 | Complete |
-| UI-02 | Phase 5 | Complete |
-| UI-03 | Phase 1 | Complete |
-| INFRA-01 | Phase 1 | Complete |
-| INFRA-02 | Phase 2 | Complete |
-| INFRA-03 | Phase 1 | Complete |
-| INFRA-04 | Phase 1 | Complete |
+| VIS-01 | Phase 7 | Pending |
+| VIS-02 | Phase 7 | Pending |
+| VIS-03 | Phase 7 | Pending |
+| VIS-04 | Phase 8 | Pending |
+| VIS-05 | Phase 8 | Pending |
+| VIS-06 | Phase 9 | Pending |
+| VIS-07 | Phase 9 | Pending |
+| VIS-08 | Phase 9 | Pending |
 
 **Coverage:**
-- v1 requirements: 17 total
-- Mapped to phases: 17
+- v1.1 requirements: 8 total
+- Mapped to phases: 8
 - Unmapped: 0 ✓
-- **All requirements complete:** 17/17 ✓
-
-**Phase Distribution:**
-- Phase 1 (Engine Foundation): 5 requirements (REND-01, UI-03, INFRA-01, INFRA-03, INFRA-04)
-- Phase 2 (Characters): 3 requirements (REND-02, REND-04, INFRA-02)
-- Phase 3 (Buildings): 1 requirement (REND-03)
-- Phase 4 (Simulation): 3 requirements (SIM-01, SIM-02, SIM-03)
-- Phase 5 (UI Controls): 3 requirements (UI-01, UI-02, GROW-03)
-- Phase 6 (Population Growth): 2 requirements (GROW-01, GROW-02)
 
 ---
 *Requirements defined: 2026-03-11*
-*Last updated: 2026-03-11 — project complete, all requirements implemented*
+*Last updated: 2026-03-11 — v1.1 requirements defined*
