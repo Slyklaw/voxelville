@@ -5,7 +5,7 @@ import { selectTask, getAvailableTasks, computeUtility } from './ai-system';
 import { SeededRNG } from '../utils/rng';
 import { MovementSystem } from './movement-system';
 import { uiState } from '../ui/ui-state';
-import { computeBuildingDemand, selectBuildingToConstruct, autoConstructBuilding, GROWTH_CONFIG } from './growth-system';
+import { computeBuildingDemand, selectBuildingToConstruct, autoConstructBuilding, checkAndSpawn, GROWTH_CONFIG } from './growth-system';
 import { Building, isHousing, isWorkplace, BuildingType } from './types';
 import { RoadGrid } from './road-grid';
 import { BuildingRenderer } from '../engine/building-renderer';
@@ -167,6 +167,22 @@ export class SimulationLoop {
     // 4. Construction check every 240 ticks (60 seconds)
     if (this.tickCount % GROWTH_CONFIG.constructionInterval === 0) {
       this.performConstructionCheck();
+    }
+
+    // 4.5. Spawn check every 120 ticks (30 seconds)
+    if (this.tickCount % GROWTH_CONFIG.spawnInterval === 0) {
+      const buildings = this.buildings.map((b) => b);
+      const entityIdCounter = { value: this.stateManager.characterCount };
+      const newId = checkAndSpawn(
+        this.stateManager,
+        buildings,
+        this.rng,
+        entityIdCounter,
+        this.tickCount,
+      );
+      if (newId >= 0 && this.debugEnabled) {
+        console.log(`Spawned new resident (entity ${newId}) at tick ${this.tickCount}`);
+      }
     }
 
     // 5. Update UI stats every 4 ticks (1 second)
