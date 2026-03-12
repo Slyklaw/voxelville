@@ -19,6 +19,12 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 5: UI Controls** - Play/Work slider and city statistics HUD
 - [x] **Phase 6: Population Growth** - Automatic city growth and expansion
 
+### v1.1: Visual Polish
+
+- [ ] **Phase 7: Per-Instance Coloring** - Multi-voxel buildings/characters render with correct colors
+- [ ] **Phase 8: Cartoon Shader** - Outline shader and flat-shading lighting
+- [ ] **Phase 9: Positioning & Terrain** - Buildings/characters above terrain, smooth terrain
+
 ## Phase Details
 
 ### Phase 1: Engine Foundation
@@ -107,6 +113,36 @@ Plans:
 - [x] 06-01: Population growth with housing vacancy checks and happiness threshold
 - [x] 06-02: Auto-construction system with slider-influenced build priorities
 
+### Phase 7: Per-Instance Coloring
+**Goal**: Buildings and characters render all voxels with correct colors
+**Depends on**: Phase 6
+**Requirements**: VIS-01, VIS-02, VIS-03
+**Success Criteria** (what must be TRUE):
+  1. User can see houses with red walls, blue roofs, dark windows, and brown doors (not all same color)
+  2. User can see characters with distinct hair color, skin color, and clothing color (not all same color)
+  3. User can see multiple buildings/characters of same type with different color variations
+**Plans**: TBD
+
+### Phase 8: Cartoon Shader
+**Goal**: Voxels render with cartoon aesthetic — black outlines and flat shading
+**Depends on**: Phase 7
+**Requirements**: VIS-04, VIS-05
+**Success Criteria** (what must be TRUE):
+  1. User can see black outlines around each voxel (back-face render pass)
+  2. User can see two-step lighting on voxel faces (bright lit side, darker shadow side)
+  3. User can distinguish individual voxels by their outline borders
+**Plans**: TBD
+
+### Phase 9: Positioning & Terrain
+**Goal**: Buildings and characters sit properly on terrain, terrain generates smoothly
+**Depends on**: Phase 7
+**Requirements**: VIS-06, VIS-07, VIS-08
+**Success Criteria** (what must be TRUE):
+  1. User can see buildings sitting on top of terrain (not buried inside hills)
+  2. User can see characters standing on terrain surface (not underground or floating)
+  3. User can see smooth terrain with no random holes (deterministic heightmap)
+**Plans**: TBD
+
 ## Progress
 
 **Execution Order:**
@@ -120,3 +156,9 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 4. Simulation | 3/3 | Complete | 2026-03-11 |
 | 5. UI Controls | 2/2 | Complete | 2026-03-11 |
 | 6. Population Growth | 2/2 | Complete | 2026-03-11 |
+
+### v1.1: Visual Polish
+
+| 7. Per-Instance Coloring | 0/3 | Not started | - |
+| 8. Cartoon Shader | 0/2 | Not started | - |
+| 9. Positioning & Terrain | 0/3 | Not started | - |

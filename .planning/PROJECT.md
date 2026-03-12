@@ -8,15 +8,29 @@ VoxelVille is a single-screen, browser-based city builder where a cartoony voxel
 
 A city that lives without you. The joy is watching it happen — citizens bustling to jobs, kids chasing each other, parties erupting on rooftops. If the autonomous simulation doesn't feel alive, nothing else matters.
 
+## Current Milestone: v1.1 Visual Polish
+
+**Goal:** Fix rendering pipeline so buildings, characters, and terrain render correctly with proper colors and cartoon aesthetic.
+
+**Target features:**
+- Per-instance voxel coloring (InstancedMesh.setColorAt)
+- Cartoon outline shader (back-face pass)
+- Correct building/character positions above terrain
+- Smooth terrain generation without holes
+
 ## Requirements
 
 ### Validated
 
-(None yet — ship to validate)
+- ✓ Core simulation engine complete (v1.0)
+- ✓ All 6 phases executed, 17/17 requirements shipped
 
 ### Active
 
-- [ ] Full ECS simulation with needs system (hunger, energy, social, hygiene)
+- [ ] Per-instance coloring for multi-voxel buildings and characters
+- [ ] Cartoon outline shader with back-face render pass
+- [ ] Building Y-positioning above terrain surface
+- [ ] Smooth terrain noise generation
 - [ ] Utility-based AI task selection with personality and slider weighting
 - [ ] Play/Work slider that nudges task selection and build priority
 - [ ] Population growth with housing/job assignment
@@ -59,10 +73,13 @@ A city that lives without you. The joy is watching it happen — citizens bustli
 | InstancedMesh from day one | Thousands of cubes need batched draw calls | ✓ Validated — 60fps with 500+ voxels |
 | Seeded deterministic RNG | Same seed = same world for sharing | ✓ Validated — mulberry32 PRNG working |
 | React refs for canvas | Decouple Three.js render loop from React re-renders | ✓ Validated — canvas mounts once |
-| Custom ECS over existing lib | Lightweight simulation, full control over component layout | — Pending |
-| Custom VoxelMeshBuilder | Cartoony cubes need per-face color and rounded edges | — Pending |
-| Utility-based AI (not FSM) | More emergent behavior, slider integration via weighted scoring | — Pending |
-| GitHub Pages deployment | Free static hosting, easy to share playable demo | — Pending |
+| Custom ECS over existing lib | Lightweight simulation, full control over component layout | ✓ Validated — all 6 phases complete |
+| Custom VoxelMeshBuilder | Cartoony cubes need per-face color and rounded edges | — Pending v1.1 |
+| Utility-based AI (not FSM) | More emergent behavior, slider integration via weighted scoring | ✓ Validated — simulation working |
+| GitHub Pages deployment | Free static hosting, easy to share playable demo | — Pending post-v1.1 |
+| Per-instance coloring | Multi-voxel models need InstancedMesh.setColorAt() for proper colors | — v1.1 Phase 7 |
+| Cartoon outline shader | Back-face render pass for black outlines per voxel | — v1.1 Phase 8 |
+| Terrain/building positioning | Buildings must sit on top of terrain surface | — v1.1 Phase 9 |
 
 ---
 *Last updated: 2026-03-11 after initialization*

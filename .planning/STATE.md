@@ -5,40 +5,35 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
-**Current focus:** Phase 6: Population Growth
+**Current focus:** Phase 7: Per-Instance Coloring
 
 ## Current Position
 
-Phase: 6 of 6 (Population Growth) — **Complete**
-Plan: 2 of 2 in current phase — **Complete**
-Status: All phases complete
-Last activity: 2026-03-11 — Full project complete (all 14 plans executed)
+Phase: 7 of 9 (Per-Instance Coloring) — Not started
+Plan: —
+Status: Roadmap created, ready for planning
+Last activity: 2026-03-11 — v1.1 roadmap created (Phases 7-9)
 
-Progress: [██████████] 100%
+Progress: [░░░░░░░░░░] 0%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 14
-- Total execution time: ~75 minutes
+- Total plans completed (v1.0): 14
+- v1.0 status: All phases complete ✓
 
-**By Phase:**
+**v1.0 Milestone Summary:**
 
-| Phase | Plans | Total | Avg/Plan |
-|-------|-------|-------|----------|
-| 1. Engine Foundation | 3 | 3 | ✓ Complete |
-| 2. Characters | 2 | 2 | ✓ Complete |
-| 3. Buildings | 2 | 2 | ✓ Complete |
-| 4. Simulation | 3 | 3 | ✓ Complete |
-| 5. UI Controls | 2 | 2 | ✓ Complete |
-| 6. Population Growth | 2 | 2 | ✓ Complete |
+| Phase | Plans | Status |
+|-------|-------|--------|
+| 1. Engine Foundation | 3 | ✓ Complete |
+| 2. Characters | 2 | ✓ Complete |
+| 3. Buildings | 2 | ✓ Complete |
+| 4. Simulation | 3 | ✓ Complete |
+| 5. UI Controls | 2 | ✓ Complete |
+| 6. Population Growth | 2 | ✓ Complete |
 
-**Recent Trend:**
-- Phase 5: Slider, HUD, and shared uiState implemented
-- Phase 6: GrowthSystem and auto-construction added; spawn logic wired into SimulationLoop
-- All 14 plans completed with clean TS + build
-
-*Updated after each plan completion*
+**v1.1 Milestone:** Visual Polish (per-instance coloring, cartoon shader, positioning fixes)
 
 ## Accumulated Context
 
@@ -110,5 +105,5 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 ## Session Continuity
 
 Last session: 2026-03-11
-Status: **Project complete** — all 6 phases, all 14 plans executed
+Status: **v1.0 complete, v1.1 starting** — visual polish milestone
 Resume file: None
