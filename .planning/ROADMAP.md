@@ -17,7 +17,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 3: Buildings** - Building models and grid placement
 - [x] **Phase 4: Simulation** - Autonomous citizen behavior with needs and AI
 - [x] **Phase 5: UI Controls** - Play/Work slider and city statistics HUD
-- [ ] **Phase 6: Population Growth** - Automatic city growth and expansion
+- [x] **Phase 6: Population Growth** - Automatic city growth and expansion
 
 ## Phase Details
 
@@ -90,8 +90,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01-PLAN.md — Play/Work slider with shared UI state and AI weight bonus integration
-- [ ] 05-02-PLAN.md — HUD overlay with population count and happiness meter (100ms polling)
+- [x] 05-01-PLAN.md — Play/Work slider with shared UI state and AI weight bonus integration
+- [x] 05-02-PLAN.md — HUD overlay with population count and happiness meter (100ms polling)
 
 ### Phase 6: Population Growth
 **Goal**: Users can see the city grow automatically with new residents and buildings
@@ -104,8 +104,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 06-01: Population growth with housing vacancy checks and happiness threshold
-- [ ] 06-02: Auto-construction system with slider-influenced build priorities
+- [x] 06-01: Population growth with housing vacancy checks and happiness threshold
+- [x] 06-02: Auto-construction system with slider-influenced build priorities
 
 ## Progress
 
@@ -118,5 +118,5 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 2. Characters | 2/2 | Complete | 2026-03-11 |
 | 3. Buildings | 2/2 | Complete | 2026-03-11 |
 | 4. Simulation | 3/3 | Complete | 2026-03-11 |
-| 5. UI Controls | 0/2 | Not started | - |
-| 6. Population Growth | 0/2 | Not started | - |
+| 5. UI Controls | 2/2 | Complete | 2026-03-11 |
+| 6. Population Growth | 2/2 | Complete | 2026-03-11 |

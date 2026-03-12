@@ -9,18 +9,18 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: 6 of 6 (Population Growth)
-Plan: 0 of 2 in current phase
-Status: Plans ready for execution
-Last activity: 2026-03-11 — Phase 6 plans created, ready for /gsd-execute-phase
+Phase: 6 of 6 (Population Growth) — **Complete**
+Plan: 2 of 2 in current phase — **Complete**
+Status: All phases complete
+Last activity: 2026-03-11 — Full project complete (all 14 plans executed)
 
-Progress: [██████░░░░] 67%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 10
-- Total execution time: ~60 minutes
+- Total plans completed: 14
+- Total execution time: ~75 minutes
 
 **By Phase:**
 
@@ -30,12 +30,13 @@ Progress: [██████░░░░] 67%
 | 2. Characters | 2 | 2 | ✓ Complete |
 | 3. Buildings | 2 | 2 | ✓ Complete |
 | 4. Simulation | 3 | 3 | ✓ Complete |
-| 5. UI Controls | 0 | 2 | — |
-| 6. Population Growth | 0 | 2 | — |
+| 5. UI Controls | 2 | 2 | ✓ Complete |
+| 6. Population Growth | 2 | 2 | ✓ Complete |
 
 **Recent Trend:**
-- Phase 4 completed in 1 session
-- All 3 plans executed successfully with clean TS + build
+- Phase 5: Slider, HUD, and shared uiState implemented
+- Phase 6: GrowthSystem and auto-construction added; spawn logic wired into SimulationLoop
+- All 14 plans completed with clean TS + build
 
 *Updated after each plan completion*
 
@@ -91,8 +92,23 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - Movement system: characters navigate between buildings smoothly
 - SimulationLoop: integrated tick system with needs, AI, and movement
 
+### Phase 5 Accomplishments
+
+- Play/Work slider with ±15% AI weight bonus
+- Shared uiState module (sliderValue, buildPriority, population, happiness)
+- Hud component with population count and happiness meter (100ms polling)
+- computeSliderBonus() integrated into AI task selection
+
+### Phase 6 Accomplishments
+
+- GrowthSystem with spawn checks every 30 seconds
+- Auto-construction every 60 seconds based on population demand
+- Housing vacancy detection from buildings
+- Happiness threshold gates for population growth
+- SimulationLoop extended with spawn and construction tick logic
+
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Phase 4 complete, ready for Phase 5 (UI Controls)
+Status: **Project complete** — all 6 phases, all 14 plans executed
 Resume file: None

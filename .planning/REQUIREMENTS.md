@@ -20,14 +20,14 @@
 
 ### Growth
 
-- [ ] **GROW-01**: Population growth — new residents spawn when housing vacancy > 0 and city happiness exceeds threshold
-- [ ] **GROW-02**: Auto-construction — buildings placed automatically when population demands (AI mayor logic)
-- [ ] **GROW-03**: Play/Work slider influences build priority — more Work = faster offices/stores, more Play = faster parks/party halls
+- [x] **GROW-01**: Population growth — new residents spawn when housing vacancy > 0 and city happiness exceeds threshold
+- [x] **GROW-02**: Auto-construction — buildings placed automatically when population demands (AI mayor logic)
+- [x] **GROW-03**: Play/Work slider influences build priority — more Work = faster offices/stores, more Play = faster parks/party halls
 
 ### UI
 
-- [ ] **UI-01**: Play/Work slider — single React-controlled range input, only player input, applies ±30% weight bonus to task selection
-- [ ] **UI-02**: HUD overlay — population count, happiness meter, updated debounced (every 100ms)
+- [x] **UI-01**: Play/Work slider — single React-controlled range input, only player input, applies ±15% weight bonus to task selection
+- [x] **UI-02**: HUD overlay — population count, happiness meter, updated debounced (every 100ms)
 - [x] **UI-03**: Isometric orbit camera — navigate the city view
 
 ### Infrastructure
@@ -81,28 +81,29 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 | Requirement | Phase | Status |
 |-------------|-------|--------|
-| REND-01 | Phase 1 | Pending |
-| REND-02 | Phase 2 | Pending |
-| REND-03 | Phase 3 | Pending |
-| REND-04 | Phase 2 | Pending |
+| REND-01 | Phase 1 | Complete |
+| REND-02 | Phase 2 | Complete |
+| REND-03 | Phase 3 | Complete |
+| REND-04 | Phase 2 | Complete |
 | SIM-01 | Phase 4 | Complete |
 | SIM-02 | Phase 4 | Complete |
 | SIM-03 | Phase 4 | Complete |
-| GROW-01 | Phase 6 | Pending |
-| GROW-02 | Phase 6 | Pending |
-| GROW-03 | Phase 5 | Pending |
-| UI-01 | Phase 5 | Pending |
-| UI-02 | Phase 5 | Pending |
-| UI-03 | Phase 1 | Pending |
-| INFRA-01 | Phase 1 | Pending |
-| INFRA-02 | Phase 2 | Pending |
-| INFRA-03 | Phase 1 | Pending |
-| INFRA-04 | Phase 1 | Pending |
+| GROW-01 | Phase 6 | Complete |
+| GROW-02 | Phase 6 | Complete |
+| GROW-03 | Phase 5 | Complete |
+| UI-01 | Phase 5 | Complete |
+| UI-02 | Phase 5 | Complete |
+| UI-03 | Phase 1 | Complete |
+| INFRA-01 | Phase 1 | Complete |
+| INFRA-02 | Phase 2 | Complete |
+| INFRA-03 | Phase 1 | Complete |
+| INFRA-04 | Phase 1 | Complete |
 
 **Coverage:**
 - v1 requirements: 17 total
 - Mapped to phases: 17
 - Unmapped: 0 ✓
+- **All requirements complete:** 17/17 ✓
 
 **Phase Distribution:**
 - Phase 1 (Engine Foundation): 5 requirements (REND-01, UI-03, INFRA-01, INFRA-03, INFRA-04)
@@ -114,4 +115,4 @@ Which phases cover which requirements. Updated during roadmap creation.
 
 ---
 *Requirements defined: 2026-03-11*
-*Last updated: 2026-03-11 after initial definition*
+*Last updated: 2026-03-11 — project complete, all requirements implemented*
