@@ -5,6 +5,17 @@ import { getVoxelGeometry } from './voxel-mesh';
 import { ALL_CHARACTER_MODELS } from '../models/characters';
 import { CharacterRenderState, getAnimationOffset } from '../simulation/character-state';
 
+// Maximum number of instances per character model variant
+const MAX_INSTANCES_PER_MODEL = 50;
+
+/**
+ * Convert a material name to THREE.Color for per-instance coloring
+ */
+function materialToColor(colorName: string): THREE.Color {
+  const material = getMaterial(colorName);
+  return material ? new THREE.Color(material.color) : new THREE.Color(0xffffff);
+}
+
 export class CharacterRenderer {
   private scene: THREE.Scene;
   private pools: Map<string, InstancedPool>;
@@ -23,15 +34,18 @@ export class CharacterRenderer {
   }
 
   private initPools(): void {
-    for (const model of ALL_CHARACTER_MODELS) {
-      const primaryVoxel = model.voxels[0];
-      const material = getMaterial(primaryVoxel.color);
-      if (!material) {
-        console.warn(`Material not found for model ${model.id}: ${primaryVoxel.color}`);
-        continue;
-      }
+    // Create neutral white material for all pools
+    // Individual voxel colors will be set via setColorAt()
+    const neutralMaterial = new THREE.MeshLambertMaterial({
+      color: 0xffffff,
+      flatShading: true,
+    });
 
-      const pool = new InstancedPool(this.geometry, material, 50);
+    for (const model of ALL_CHARACTER_MODELS) {
+      // Pool size = voxels per model * max instances
+      const poolSize = model.voxels.length * MAX_INSTANCES_PER_MODEL;
+
+      const pool = new InstancedPool(this.geometry, neutralMaterial, poolSize);
       this.scene.add(pool.meshInstance);
       this.pools.set(model.id, pool);
       this.instanceIndices.set(model.id, new Map());
@@ -41,8 +55,8 @@ export class CharacterRenderer {
   /**
    * Add a character instance to the specified model's pool.
    * @param modelId - The character model ID (e.g., 'male_1', 'child_3')
-   * @param position - World position for the character
-   * @returns Instance index for later updates
+   * @param position - World position for the character (base position, feet)
+   * @returns Instance index for the first voxel (for compatibility with existing callers)
    */
   addCharacter(modelId: string, position: THREE.Vector3): number {
     const pool = this.pools.get(modelId);
@@ -50,17 +64,49 @@ export class CharacterRenderer {
       throw new Error(`Model not found: ${modelId}`);
     }
 
-    const index = pool.addInstance(position);
+    const model = ALL_CHARACTER_MODELS.find(m => m.id === modelId);
+    if (!model) {
+      throw new Error(`Model definition not found: ${modelId}`);
+    }
+
     const indices = this.instanceIndices.get(modelId)!;
-    indices.set(index, (indices.get(index) || 0) + 1);
-    return index;
+
+    // Track the first instance index (for compatibility)
+    let firstIndex = -1;
+
+    // Add each voxel as a separate instance with its correct color
+    for (const voxel of model.voxels) {
+      // Calculate world position: base position + voxel offset
+      const worldPos = new THREE.Vector3(
+        position.x + voxel.x,
+        position.y + voxel.y,
+        position.z + voxel.z,
+      );
+
+      // Add instance at voxel position
+      const instanceIndex = pool.addInstance(worldPos);
+
+      // Set per-instance color from voxel material
+      const color = materialToColor(voxel.color);
+      pool.meshInstance.setColorAt(instanceIndex, color);
+      pool.meshInstance.instanceColor!.needsUpdate = true;
+
+      // Track instance index
+      indices.set(instanceIndex, (indices.get(instanceIndex) || 0) + 1);
+
+      if (firstIndex === -1) {
+        firstIndex = instanceIndex;
+      }
+    }
+
+    return firstIndex;
   }
 
   /**
-   * Update a character instance's position.
+   * Update a character instance's position (updates all voxels).
    * @param modelId - The character model ID
-   * @param index - Instance index returned from addCharacter
-   * @param position - New world position
+   * @param index - Instance index returned from addCharacter (first voxel)
+   * @param position - New world position (base position)
    */
   updateCharacter(modelId: string, index: number, position: THREE.Vector3): void {
     const pool = this.pools.get(modelId);
@@ -68,14 +114,28 @@ export class CharacterRenderer {
       throw new Error(`Model not found: ${modelId}`);
     }
 
-    pool.updateInstance(index, position);
+    const model = ALL_CHARACTER_MODELS.find(m => m.id === modelId);
+    if (!model) {
+      throw new Error(`Model definition not found: ${modelId}`);
+    }
+
+    // Update all voxel instances for this character
+    for (let i = 0; i < model.voxels.length; i++) {
+      const voxel = model.voxels[i];
+      const worldPos = new THREE.Vector3(
+        position.x + voxel.x,
+        position.y + voxel.y,
+        position.z + voxel.z,
+      );
+      pool.updateInstance(index + i, worldPos);
+    }
   }
 
   /**
-   * Update a character instance with position and rotation.
+   * Update a character instance with position and rotation (updates all voxels).
    * @param modelId - The character model ID
-   * @param index - Instance index returned from addCharacter
-   * @param position - New world position
+   * @param index - Instance index returned from addCharacter (first voxel)
+   * @param position - New world position (base position)
    * @param rotation - Optional Euler rotation (for animation)
    */
   updateCharacterWithRotation(
@@ -89,14 +149,29 @@ export class CharacterRenderer {
       throw new Error(`Model not found: ${modelId}`);
     }
 
-    this.dummy.position.copy(position);
-    this.dummy.scale.set(1, 1, 1);
-    if (rotation) {
-      this.dummy.rotation.copy(rotation);
+    const model = ALL_CHARACTER_MODELS.find(m => m.id === modelId);
+    if (!model) {
+      throw new Error(`Model definition not found: ${modelId}`);
     }
-    this.dummy.updateMatrix();
-    pool.meshInstance.setMatrixAt(index, this.dummy.matrix);
-    pool.meshInstance.instanceMatrix.needsUpdate = true;
+
+    // Update all voxel instances for this character
+    for (let i = 0; i < model.voxels.length; i++) {
+      const voxel = model.voxels[i];
+      this.dummy.position.set(
+        position.x + voxel.x,
+        position.y + voxel.y,
+        position.z + voxel.z,
+      );
+      this.dummy.scale.set(1, 1, 1);
+      if (rotation) {
+        this.dummy.rotation.copy(rotation);
+      } else {
+        this.dummy.rotation.set(0, 0, 0);
+      }
+      this.dummy.updateMatrix();
+      pool.meshInstance.setMatrixAt(index + i, this.dummy.matrix);
+      pool.meshInstance.instanceMatrix.needsUpdate = true;
+    }
   }
 
   /**
@@ -141,10 +216,10 @@ export class CharacterRenderer {
   }
 
   /**
-   * Update character instance with animation offsets.
-   * Applies position interpolation, animation transforms, and rotation.
+   * Update character instance with animation offsets (updates all voxels).
+   * Applies position interpolation, animation transforms, and rotation to all voxels.
    * @param modelId - The character model ID
-   * @param index - Instance index returned from addCharacter
+   * @param index - Instance index returned from addCharacter (first voxel)
    * @param renderState - Interpolated render state with animation data
    */
   updateCharacterInstance(
@@ -157,22 +232,38 @@ export class CharacterRenderer {
       throw new Error(`Model not found: ${modelId}`);
     }
 
+    const model = ALL_CHARACTER_MODELS.find(m => m.id === modelId);
+    if (!model) {
+      throw new Error(`Model definition not found: ${modelId}`);
+    }
+
     // Get animation offset (Y-bob, etc.)
     const offset = getAnimationOffset('idle', renderState.animationPhase);
 
-    // Set position with animation offset
-    this.dummy.position.copy(renderState.interpolatedPosition);
-    this.dummy.position.add(offset);
+    // Calculate base position with animation offset applied
+    const basePos = renderState.interpolatedPosition.clone().add(offset);
 
-    // Scale remains 1:1
-    this.dummy.scale.set(1, 1, 1);
+    // Update all voxel instances for this character
+    for (let i = 0; i < model.voxels.length; i++) {
+      const voxel = model.voxels[i];
 
-    // Apply Y-axis rotation from render state
-    this.dummy.rotation.set(0, renderState.interpolatedRotation, 0);
+      // Calculate world position: animated base + voxel offset
+      this.dummy.position.set(
+        basePos.x + voxel.x,
+        basePos.y + voxel.y,
+        basePos.z + voxel.z,
+      );
 
-    // Update matrix and push to instanced mesh
-    this.dummy.updateMatrix();
-    pool.meshInstance.setMatrixAt(index, this.dummy.matrix);
-    pool.meshInstance.instanceMatrix.needsUpdate = true;
+      // Scale remains 1:1
+      this.dummy.scale.set(1, 1, 1);
+
+      // Apply Y-axis rotation from render state
+      this.dummy.rotation.set(0, renderState.interpolatedRotation, 0);
+
+      // Update matrix and push to instanced mesh
+      this.dummy.updateMatrix();
+      pool.meshInstance.setMatrixAt(index + i, this.dummy.matrix);
+      pool.meshInstance.instanceMatrix.needsUpdate = true;
+    }
   }
 }
