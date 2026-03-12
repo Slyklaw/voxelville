@@ -2,16 +2,17 @@ import * as THREE from 'three';
 import { CharacterSimState } from './character-state';
 import { Task, TaskType, TASK_PERSONALITY_FIT } from './types';
 import { computeNeedSatisfaction } from './needs-system';
+import { uiState } from '../ui/ui-state';
 
 /**
  * Utility weights for task selection (total = 1.0)
- * 40% needs satisfaction, 30% personality fit, 30% proximity
- * (Slider bonus will be added in Phase 5)
+ * 35% needs satisfaction, 25% personality fit, 25% proximity, 15% slider bonus
  */
 export const UTILITY_WEIGHTS = {
-  needSatisfaction: 0.4,
-  personalityFit: 0.3,
-  proximity: 0.3,
+  needSatisfaction: 0.35,
+  personalityFit: 0.25,
+  proximity: 0.25,
+  sliderBonus: 0.15,
 };
 
 /**
@@ -56,8 +57,31 @@ export function computeProximityScore(
 }
 
 /**
+ * Compute slider bonus for a task type
+ * Play tasks get bonus when slider is low, work tasks when slider is high
+ * Returns -0.15 to +0.15 bonus
+ */
+export function computeSliderBonus(taskType: TaskType): number {
+  const slider = uiState.sliderValue;
+  
+  const playTasks: TaskType[] = ['shop', 'party', 'park'];
+  const workTasks: TaskType[] = ['work', 'clean'];
+  
+  if (playTasks.includes(taskType)) {
+    // Play tasks favored when slider is low (0)
+    return (1 - slider) * 0.3 - 0.15; // -0.15 to +0.15
+  } else if (workTasks.includes(taskType)) {
+    // Work tasks favored when slider is high (1)
+    return slider * 0.3 - 0.15; // -0.15 to +0.15
+  }
+  
+  // Neutral tasks (eat, sleep, shower) - no slider effect
+  return 0;
+}
+
+/**
  * Compute total utility score for a task
- * U(task) = w1*needSatisfaction + w2*personalityFit + w3*proximity
+ * U(task) = w1*needSatisfaction + w2*personalityFit + w3*proximity + w4*sliderBonus
  */
 export function computeUtility(
   task: Task,
@@ -66,11 +90,13 @@ export function computeUtility(
   const needScore = computeNeedSatisfaction(task.type, resident.needs);
   const personalityScore = computePersonalityFit(task.type, resident.personality);
   const proximityScore = computeProximityScore(resident.position, task.location);
+  const sliderScore = computeSliderBonus(task.type);
 
   return (
     UTILITY_WEIGHTS.needSatisfaction * needScore +
     UTILITY_WEIGHTS.personalityFit * personalityScore +
-    UTILITY_WEIGHTS.proximity * proximityScore
+    UTILITY_WEIGHTS.proximity * proximityScore +
+    UTILITY_WEIGHTS.sliderBonus * sliderScore
   );
 }
 

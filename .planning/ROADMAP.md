@@ -90,8 +90,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 05-01: Play/Work React slider component with weight integration to AI task selection
-- [ ] 05-02: HUD overlay with population count and happiness meter (debounced updates)
+- [ ] 05-01-PLAN.md — Play/Work slider with shared UI state and AI weight bonus integration
+- [ ] 05-02-PLAN.md — HUD overlay with population count and happiness meter (100ms polling)
 
 ### Phase 6: Population Growth
 **Goal**: Users can see the city grow automatically with new residents and buildings

@@ -4,6 +4,7 @@ import { decayNeeds } from './needs-system';
 import { selectTask, getAvailableTasks, computeUtility } from './ai-system';
 import { SeededRNG } from '../utils/rng';
 import { MovementSystem } from './movement-system';
+import { uiState } from '../ui/ui-state';
 
 /**
  * Main simulation loop running at 4 ticks/sec (250ms interval)
@@ -70,8 +71,9 @@ export class SimulationLoop {
   /**
    * Single simulation tick
    * Phase 1 (04-01): Decay needs
-   * Phase 2 (04-02): Task selection will be added
-   * Phase 3 (04-03): Movement will be added
+   * Phase 2 (04-02): Task selection
+   * Phase 3 (04-03): Movement
+   * Phase 4 (05-02): UI stats update
    */
   private tick(): void {
     this.tickCount++;
@@ -110,6 +112,27 @@ export class SimulationLoop {
     // 3. Movement update (one step per tick)
     if (this.movementSystem) {
       this.movementSystem.update();
+    }
+
+    // 4. Update UI stats every 4 ticks (1 second)
+    if (this.tickCount % 4 === 0) {
+      const population = this.stateManager.characterCount;
+      
+      // Calculate average happiness (inverse of average needs)
+      let totalNeedScore = 0;
+      let count = 0;
+      for (const entityId of this.stateManager.getAllEntityIds()) {
+        const sim = this.stateManager.getCharacter(entityId);
+        if (sim) {
+          const avgNeed = (sim.needs.hunger + sim.needs.energy + 
+                          sim.needs.social + sim.needs.hygiene) / 4;
+          totalNeedScore += 1 - avgNeed;  // Higher = happier
+          count++;
+        }
+      }
+      const happiness = count > 0 ? totalNeedScore / count : 0;
+      
+      uiState.updateStats(population, happiness);
     }
 
     // Debug logging every 10 ticks to avoid spam

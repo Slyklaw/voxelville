@@ -16,6 +16,8 @@ import { RoadGrid } from './simulation/road-grid';
 import { placeBuilding } from './simulation/grid-placement';
 import { ALL_CHARACTER_MODELS } from './models/characters';
 import { SeededRNG } from './utils/rng';
+import { Slider } from './ui/Slider';
+import { Hud } from './ui/Hud';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -182,6 +184,8 @@ function App() {
         <h1 className="text-xl font-bold text-gray-800">VoxelVille</h1>
         <p className="text-sm text-gray-600">Drag to orbit · Scroll to zoom</p>
       </div>
+      <Hud />
+      <Slider initialValue={0.5} />
     </div>
   );
 }
