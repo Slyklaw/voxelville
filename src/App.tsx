@@ -6,11 +6,14 @@ import { getMaterial } from './engine/materials';
 import { OrbitCamera } from './engine/camera';
 import { InstancedPool } from './engine/instancing';
 import { CharacterRenderer } from './engine/character-renderer';
+import { BuildingRenderer } from './engine/building-renderer';
 import { createWorld } from './simulation/world';
 import {
   CharacterStateManager,
   updateSimulation,
 } from './simulation/character-state';
+import { RoadGrid } from './simulation/road-grid';
+import { placeBuilding } from './simulation/grid-placement';
 import { ALL_CHARACTER_MODELS } from './models/characters';
 import { SeededRNG } from './utils/rng';
 
@@ -79,6 +82,42 @@ function App() {
       if (sim) sim.instanceIndex = index;
     }
 
+    // Buildings - Road network and placement
+    const buildingRenderer = new BuildingRenderer(ctx.scene);
+    const roadGrid = new RoadGrid();
+    
+    // Place roads in a cross pattern
+    // Horizontal line from (-10,0) to (10,0)
+    for (let x = -10; x <= 10; x++) {
+      roadGrid.placeRoad(x, 0);
+      // Add road tile visually
+      buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, 0.5, 0));
+    }
+    
+    // Vertical line from (0,-10) to (0,10)
+    for (let z = -10; z <= 10; z++) {
+      roadGrid.placeRoad(0, z);
+      // Add road tile visually (skip center to avoid duplicate)
+      if (z !== 0) {
+        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(0, 0.5, z));
+      }
+    }
+    
+    // Place buildings adjacent to roads
+    // Houses near the roads
+    placeBuilding(2, 1, 'house_cottage', buildingRenderer, roadGrid);
+    placeBuilding(2, -1, 'house_two_storey', buildingRenderer, roadGrid);
+    placeBuilding(-2, 1, 'house_row_house', buildingRenderer, roadGrid);
+    
+    // Office near the road
+    placeBuilding(5, 0, 'office_tower', buildingRenderer, roadGrid);
+    
+    // Store near the road
+    placeBuilding(0, 5, 'store_market_stall', buildingRenderer, roadGrid);
+    
+    // Park adjacent to road (3x3, needs to be adjacent)
+    placeBuilding(3, 3, 'park_basic', buildingRenderer, roadGrid);
+
     // Simulate animation state changes
     let simInterval: number | undefined;
     function startSimulation(): void {
@@ -127,6 +166,7 @@ function App() {
       if (simInterval) clearInterval(simInterval);
       orbitCamera.dispose();
       charRenderer.dispose();
+      buildingRenderer.dispose();
       for (const pool of pools.values()) {
         ctx.scene.remove(pool.meshInstance);
         pool.dispose();
