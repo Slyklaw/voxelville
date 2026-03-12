@@ -1,4 +1,4 @@
-import { useRef, useEffect } from 'react';
+import { useRef, useEffect, useState } from 'react';
 import * as THREE from 'three';
 import { initRenderer, createOutlineFor, renderWithOutlines, MeshWithOutline } from './engine/renderer';
 import { getVoxelGeometry } from './engine/voxel-mesh';
@@ -17,8 +17,29 @@ import { SeededRNG } from './utils/rng';
 import { Slider } from './ui/Slider';
 import { Hud } from './ui/Hud';
 import type { BuildingType } from './simulation/types';
+import { ModelViewer } from './ModelViewer';
 
 function App() {
+  const [showViewer, setShowViewer] = useState(false);
+
+  if (showViewer) {
+    return (
+      <div className="relative w-full h-screen">
+        <ModelViewer />
+        <button
+          onClick={() => setShowViewer(false)}
+          className="absolute top-4 left-1/2 -translate-x-1/2 z-50 px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg font-medium shadow-lg"
+        >
+          ← Back to VoxelVille
+        </button>
+      </div>
+    );
+  }
+
+  return <MainApp onOpenViewer={() => setShowViewer(true)} />;
+}
+
+function MainApp({ onOpenViewer }: { onOpenViewer: () => void }) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -194,6 +215,12 @@ function App() {
       <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
         <h1 className="text-xl font-bold text-gray-800">VoxelVille</h1>
         <p className="text-sm text-gray-600">Drag to orbit · Scroll to zoom</p>
+        <button
+          onClick={onOpenViewer}
+          className="mt-2 px-3 py-1 bg-blue-500 hover:bg-blue-600 text-white text-sm rounded font-medium"
+        >
+          Model Viewer →
+        </button>
       </div>
       <Hud />
       <Slider initialValue={0.5} />
