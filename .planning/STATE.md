@@ -9,10 +9,10 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 
 ## Current Position
 
-Phase: 10 (defining requirements, about to start)
+Phase: 10 (tests written and run)
 Plan: —
-Status: Defining requirements for v1.2
-Last activity: 2026-03-12 — Milestone v1.2 started
+Status: Tests complete, bugs identified
+Last activity: 2026-03-12 — Plan 02-02 (animation system) documented and committed
 
 Progress: ░░░░░░░░░░ (v1.2: 0/1 phases)
 
@@ -48,6 +48,7 @@ Progress: ░░░░░░░░░░ (v1.2: 0/1 phases)
 | Phase | Plans | Status |
 |-------|-------|--------|
 | 10. Visual Verification Tests | 0 | ○ Not started |
+| Phase 02-characters P02-02 | pre-executed | 4 tasks | 3 files |
 
 ## Accumulated Context
 
@@ -147,5 +148,5 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 ## Session Continuity
 
 Last session: 2026-03-12
-Status: **v1.1 Visual Polish milestone complete — all 9 phases done**
+Status: **Phase 02-characters plan 02-02 documented — animation system summary created**
 Resume file: None
