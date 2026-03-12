@@ -14,9 +14,9 @@
 
 ### Simulation
 
-- [ ] **SIM-01**: Needs system — each resident has hunger, energy, social, hygiene that decay over time
-- [ ] **SIM-02**: Utility-based AI task selection — residents score available tasks using needs, personality, proximity, and slider weighting
-- [ ] **SIM-03**: A* pathfinding on road grid — residents navigate between buildings using road network
+- [x] **SIM-01**: Needs system — each resident has hunger, energy, social, hygiene that decay over time
+- [x] **SIM-02**: Utility-based AI task selection — residents score available tasks using needs, personality, proximity, and slider weighting
+- [x] **SIM-03**: A* pathfinding on road grid — residents navigate between buildings using road network
 
 ### Growth
 
@@ -85,9 +85,9 @@ Which phases cover which requirements. Updated during roadmap creation.
 | REND-02 | Phase 2 | Pending |
 | REND-03 | Phase 3 | Pending |
 | REND-04 | Phase 2 | Pending |
-| SIM-01 | Phase 4 | Pending |
-| SIM-02 | Phase 4 | Pending |
-| SIM-03 | Phase 4 | Pending |
+| SIM-01 | Phase 4 | Complete |
+| SIM-02 | Phase 4 | Complete |
+| SIM-03 | Phase 4 | Complete |
 | GROW-01 | Phase 6 | Pending |
 | GROW-02 | Phase 6 | Pending |
 | GROW-03 | Phase 5 | Pending |

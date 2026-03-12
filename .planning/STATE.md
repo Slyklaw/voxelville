@@ -5,21 +5,21 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
-**Current focus:** Phase 4: Simulation
+**Current focus:** Phase 5: UI Controls
 
 ## Current Position
 
-Phase: 4 of 6 (Simulation)
-Plan: 0 of 3 in current phase
-Status: Ready to plan
+Phase: 5 of 6 (UI Controls)
+Plan: 0 of 2 in current phase
+Status: Complete
 Last activity: 2026-03-11 — Phase 3 complete, all 2 plans executed
 
-Progress: [████░░░░░░] 50%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
 **Velocity:**
-- Total plans completed: 7
+- Total plans completed: 10
 - Total execution time: ~60 minutes
 
 **By Phase:**
@@ -29,12 +29,12 @@ Progress: [████░░░░░░] 50%
 | 1. Engine Foundation | 3 | 3 | ✓ Complete |
 | 2. Characters | 2 | 2 | ✓ Complete |
 | 3. Buildings | 2 | 2 | ✓ Complete |
-| 4. Simulation | 0 | 3 | — |
+| 4. Simulation | 3 | 3 | ✓ Complete |
 | 5. UI Controls | 0 | 2 | — |
 | 6. Population Growth | 0 | 2 | — |
 
 **Recent Trend:**
-- Phase 1 completed in 1 session
+- Phase 4 completed in 1 session
 - All 3 plans executed successfully with clean TS + build
 
 *Updated after each plan completion*
@@ -52,6 +52,9 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - [Phase 3]: Building models follow same InstancedPool per type pattern as CharacterRenderer
 - [Phase 3]: Road auto-connect uses directional connectivity bits, not procedural edge generation
 - [Phase 3]: Grid placement is incremental (basic adjacency first, zoning later — avoiding Pitfall 10)
+- [Phase 4]: Exponential decay formula for needs (rate * 1 + current) for realistic urgency scaling
+- [Phase 4]: Utility scoring: 40% needs, 30% personality, 30% proximity
+- [Phase 4]: A* pathfinding with 1-second cache on RoadGrid (time-sliced for performance)
 
 ### Phase 1 Accomplishments
 
@@ -80,8 +83,16 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - GridPlacement with road adjacency rules
 - Demo: road cross pattern with buildings placed via grid rules
 
+### Phase 4 Accomplishments
+
+- Needs system: hunger, energy, social, hygiene decay at different rates (4 ticks/sec)
+- AI task selection: utility scoring with needs/personality/proximity + weighted random
+- A* pathfinding on road grid with 1-second path caching
+- Movement system: characters navigate between buildings smoothly
+- SimulationLoop: integrated tick system with needs, AI, and movement
+
 ## Session Continuity
 
 Last session: 2026-03-11
-Stopped at: Phase 3 complete, ready to plan Phase 4 (Simulation)
+Stopped at: Phase 4 complete, ready for Phase 5 (UI Controls)
 Resume file: None

@@ -15,7 +15,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 - [x] **Phase 1: Engine Foundation** - Three.js renderer, camera, infrastructure
 - [x] **Phase 2: Characters** - Animated character models with smooth movement
 - [x] **Phase 3: Buildings** - Building models and grid placement
-- [ ] **Phase 4: Simulation** - Autonomous citizen behavior with needs and AI
+- [x] **Phase 4: Simulation** - Autonomous citizen behavior with needs and AI
 - [ ] **Phase 5: UI Controls** - Play/Work slider and city statistics HUD
 - [ ] **Phase 6: Population Growth** - Automatic city growth and expansion
 
@@ -75,9 +75,9 @@ Plans:
 **Plans**: 3 plans
 
 Plans:
-- [ ] 04-01: ECS foundation with needs system (hunger, energy, social, hygiene decay)
-- [ ] 04-02: Utility-based AI task selection with personality and slider weighting
-- [ ] 04-03: A* pathfinding on road grid with path caching
+- [x] 04-01: ECS foundation with needs system (hunger, energy, social, hygiene decay)
+- [x] 04-02: Utility-based AI task selection with personality and slider weighting
+- [x] 04-03: A* pathfinding on road grid with path caching
 
 ### Phase 5: UI Controls
 **Goal**: Users can interact with the simulation via a Play/Work slider and view city stats
@@ -117,6 +117,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 | 1. Engine Foundation | 3/3 | Complete | 2026-03-11 |
 | 2. Characters | 2/2 | Complete | 2026-03-11 |
 | 3. Buildings | 2/2 | Complete | 2026-03-11 |
-| 4. Simulation | 0/3 | Not started | - |
+| 4. Simulation | 3/3 | Complete | 2026-03-11 |
 | 5. UI Controls | 0/2 | Not started | - |
 | 6. Population Growth | 0/2 | Not started | - |
