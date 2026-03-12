@@ -14,7 +14,7 @@ import { ALL_BUILDING_MODELS } from '../models/buildings';
 /**
  * Building instance with full occupancy tracking for construction system
  */
-interface BuildingInstance {
+export interface BuildingInstance {
   id: number;
   type: BuildingType;
   position: THREE.Vector3;

@@ -7,17 +7,16 @@ import { OrbitCamera } from './engine/camera';
 import { InstancedPool } from './engine/instancing';
 import { CharacterRenderer } from './engine/character-renderer';
 import { BuildingRenderer } from './engine/building-renderer';
-import { createWorld } from './simulation/world';
-import {
-  CharacterStateManager,
-  updateSimulation,
-} from './simulation/character-state';
+import { CharacterStateManager } from './simulation/character-state';
 import { RoadGrid } from './simulation/road-grid';
-import { placeBuilding } from './simulation/grid-placement';
+import { createWorld } from './simulation/world';
+import { SimulationLoop, BuildingInstance } from './simulation/simulation-tick';
+import { MovementSystem } from './simulation/movement-system';
 import { ALL_CHARACTER_MODELS } from './models/characters';
 import { SeededRNG } from './utils/rng';
 import { Slider } from './ui/Slider';
 import { Hud } from './ui/Hud';
+import type { BuildingType } from './simulation/types';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -27,16 +26,12 @@ function App() {
     if (!canvas) return;
 
     const ctx = initRenderer(canvas);
-
-    // Orbit camera
     const orbitCamera = new OrbitCamera(ctx.camera, canvas);
     canvas.style.cursor = 'grab';
 
-    // Create world
+    // Generate terrain
     const world = createWorld(20);
     world.generate(42);
-
-    // Build instanced pools per color
     const tiles = world.getTiles();
     const colorCounts = new Map<string, number>();
     for (const tile of tiles) {
@@ -53,14 +48,12 @@ function App() {
       pools.set(colorName, pool);
     }
 
-    // Populate terrain instances
     for (const tile of tiles) {
       const pool = pools.get(tile.color);
       if (!pool) continue;
       pool.addInstance(new THREE.Vector3(tile.x, tile.y, tile.z));
     }
 
-    // Add all terrain pools to scene
     for (const pool of pools.values()) {
       ctx.scene.add(pool.meshInstance);
     }
@@ -70,75 +63,69 @@ function App() {
     const stateManager = new CharacterStateManager();
     const rng = new SeededRNG(42);
 
-    // Spawn some characters at random ground positions
+    // Buildings and simulation
+    const buildingRenderer = new BuildingRenderer(ctx.scene);
+    const roadGrid = new RoadGrid();
+
+    // Build road cross
+    for (let x = -10; x <= 10; x++) {
+      roadGrid.placeRoad(x, 0);
+      buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, 0.5, 0));
+    }
+    for (let z = -10; z <= 10; z++) {
+      roadGrid.placeRoad(0, z);
+      if (z !== 0) {
+        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(0, 0.5, z));
+      }
+    }
+
+    // Create initial buildings
+    const buildingInstances: BuildingInstance[] = [];
+    let bid = 0;
+
+    function addBuilding(
+      modelId: string,
+      pos: THREE.Vector3,
+      cap: number,
+      type: BuildingType,
+    ): void {
+      buildingRenderer.addBuilding(modelId, pos);
+      buildingInstances.push({
+        id: bid++,
+        type,
+        position: pos.clone(),
+        capacity: cap,
+        occupancy: 0,
+        modelId,
+      });
+    }
+
+    addBuilding('house_cottage', new THREE.Vector3(2, 0, 1), 4, 'house');
+    addBuilding('house_two_storey', new THREE.Vector3(2, 0, -1), 6, 'house');
+    addBuilding('house_row_house', new THREE.Vector3(-2, 0, 1), 5, 'house');
+    addBuilding('office_tower', new THREE.Vector3(5, 0, 0), 10, 'office');
+    addBuilding('store_market_stall', new THREE.Vector3(0, 0, 5), 3, 'store');
+    addBuilding('park_basic', new THREE.Vector3(3, 0, 3), 999, 'park');
+
+    // Simulation loop with growth system
+    const simLoop = new SimulationLoop(stateManager, buildingInstances, 42);
+    const movementSystem = new MovementSystem(roadGrid, stateManager);
+    simLoop.setMovementSystem(movementSystem);
+    simLoop.setRoadGrid(roadGrid);
+    simLoop.setBuildingRenderer(buildingRenderer);
+    simLoop.start();
+
+    // Spawn initial characters
     for (let i = 0; i < 20; i++) {
       const model = ALL_CHARACTER_MODELS[i % ALL_CHARACTER_MODELS.length];
       const x = rng.nextInt(-8, 8);
       const z = rng.nextInt(-8, 8);
       const position = new THREE.Vector3(x, 0, z);
       const index = charRenderer.addCharacter(model.id, position);
-      const entityId = i;
-      stateManager.createCharacter(entityId, model.id, position);
-      // Set the instance index in the sim state
-      const sim = stateManager.getCharacter(entityId);
+      stateManager.createCharacter(i, model.id, position);
+      const sim = stateManager.getCharacter(i);
       if (sim) sim.instanceIndex = index;
     }
-
-    // Buildings - Road network and placement
-    const buildingRenderer = new BuildingRenderer(ctx.scene);
-    const roadGrid = new RoadGrid();
-    
-    // Place roads in a cross pattern
-    // Horizontal line from (-10,0) to (10,0)
-    for (let x = -10; x <= 10; x++) {
-      roadGrid.placeRoad(x, 0);
-      // Add road tile visually
-      buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, 0.5, 0));
-    }
-    
-    // Vertical line from (0,-10) to (0,10)
-    for (let z = -10; z <= 10; z++) {
-      roadGrid.placeRoad(0, z);
-      // Add road tile visually (skip center to avoid duplicate)
-      if (z !== 0) {
-        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(0, 0.5, z));
-      }
-    }
-    
-    // Place buildings adjacent to roads
-    // Houses near the roads
-    placeBuilding(2, 1, 'house_cottage', buildingRenderer, roadGrid);
-    placeBuilding(2, -1, 'house_two_storey', buildingRenderer, roadGrid);
-    placeBuilding(-2, 1, 'house_row_house', buildingRenderer, roadGrid);
-    
-    // Office near the road
-    placeBuilding(5, 0, 'office_tower', buildingRenderer, roadGrid);
-    
-    // Store near the road
-    placeBuilding(0, 5, 'store_market_stall', buildingRenderer, roadGrid);
-    
-    // Park adjacent to road (3x3, needs to be adjacent)
-    placeBuilding(3, 3, 'park_basic', buildingRenderer, roadGrid);
-
-    // Simulate animation state changes
-    let simInterval: number | undefined;
-    function startSimulation(): void {
-      simInterval = window.setInterval(() => {
-        const animStates: Array<'idle' | 'walk' | 'work' | 'party'> = [
-          'idle', 'walk', 'work', 'party',
-        ];
-        for (const entityId of stateManager.getAllEntityIds()) {
-          const sim = stateManager.getCharacter(entityId);
-          if (!sim) continue;
-          const newAnim = animStates[Math.floor(Math.random() * animStates.length)];
-          // Slight random movement
-          const newX = sim.position.x + (rng.nextInt(-1, 1));
-          const newZ = sim.position.z + (rng.nextInt(-1, 1));
-          updateSimulation(sim, new THREE.Vector3(newX, 0, newZ), newAnim);
-        }
-      }, 250);
-    }
-    startSimulation();
 
     // Render loop
     let running = true;
@@ -146,7 +133,6 @@ function App() {
       if (!running) return;
       requestAnimationFrame(animate);
 
-      // Update character positions from interpolated render states
       for (const entityId of stateManager.getAllEntityIds()) {
         const renderState = stateManager.getRenderState(entityId);
         const sim = stateManager.getCharacter(entityId);
@@ -162,10 +148,10 @@ function App() {
     }
     animate();
 
-    // Cleanup on unmount
+    // Cleanup
     return () => {
       running = false;
-      if (simInterval) clearInterval(simInterval);
+      simLoop.stop();
       orbitCamera.dispose();
       charRenderer.dispose();
       buildingRenderer.dispose();
