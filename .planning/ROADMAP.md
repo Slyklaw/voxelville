@@ -134,7 +134,10 @@ Plans:
   1. User can see black outlines around each voxel (back-face render pass)
   2. User can see two-step lighting on voxel faces (bright lit side, darker shadow side)
   3. User can distinguish individual voxels by their outline borders
-**Plans**: TBD
+**Plans**: 1 plan
+
+Plans:
+- [ ] 08-01-PLAN.md — Create OutlineRenderer and wire two-pass rendering
 
 ### Phase 9: Positioning & Terrain
 **Goal**: Buildings and characters sit properly on terrain, terrain generates smoothly

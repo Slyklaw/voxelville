@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
-**Current focus:** Phase 7: Per-Instance Coloring
+**Current focus:** Phase 8: Cartoon Shader
 
 ## Current Position
 
-Phase: 7 of 9 (Per-Instance Coloring)
-Plan: 01 complete ✓
-Status: All tasks committed successfully
-Last activity: 2026-03-11 — Phase 7 Plan 1 executed (2 tasks, per-instance coloring)
+Phase: 8 of 9 (Cartoon Shader)
+Plan: 01 ready to execute
+Status: Plan created and verified ✓
+Last activity: 2026-03-12 — Phase 8 plan created (1 plan, 2 tasks)
 
-Progress: [██████████] 100%
+Progress: ░░░░░░░░░░
 
 ## Performance Metrics
 
