@@ -3,6 +3,7 @@ import * as THREE from 'three';
 import { initRenderer, render } from './engine/renderer';
 import { getVoxelGeometry } from './engine/voxel-mesh';
 import { getMaterial } from './engine/materials';
+import { OrbitCamera } from './engine/camera';
 import { InstancedPool } from './engine/instancing';
 import { createWorld } from './simulation/world';
 
@@ -10,9 +11,14 @@ function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
-    if (!canvasRef.current) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
 
-    const ctx = initRenderer(canvasRef.current);
+    const ctx = initRenderer(canvas);
+
+    // Orbit camera
+    const orbitCamera = new OrbitCamera(ctx.camera, canvas);
+    canvas.style.cursor = 'grab';
 
     // Create world
     const world = createWorld(20);
@@ -25,8 +31,8 @@ function App() {
       colorCounts.set(tile.color, (colorCounts.get(tile.color) ?? 0) + 1);
     }
 
-    const pools = new Map<string, InstancedPool>();
     const geometry = getVoxelGeometry();
+    const pools = new Map<string, InstancedPool>();
 
     for (const [colorName, count] of colorCounts) {
       const material = getMaterial(colorName);
@@ -56,8 +62,10 @@ function App() {
     }
     animate();
 
+    // Cleanup on unmount
     return () => {
       running = false;
+      orbitCamera.dispose();
       for (const pool of pools.values()) {
         ctx.scene.remove(pool.meshInstance);
         pool.dispose();
@@ -71,7 +79,7 @@ function App() {
       <canvas ref={canvasRef} className="block w-full h-full" />
       <div className="absolute top-4 left-4 bg-white/80 backdrop-blur-sm rounded-lg px-4 py-2 shadow-lg">
         <h1 className="text-xl font-bold text-gray-800">VoxelVille</h1>
-        <p className="text-sm text-gray-600">A city that lives without you</p>
+        <p className="text-sm text-gray-600">Drag to orbit · Scroll to zoom</p>
       </div>
     </div>
   );
