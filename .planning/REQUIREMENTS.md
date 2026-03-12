@@ -9,7 +9,7 @@
 
 - [x] **REND-01**: Three.js renders voxel cubes with InstancedMesh batching (thousands of cubes at 60fps)
 - [x] **REND-02**: Character models defined (5 male, 5 female, 8 child variants with hair/skin/clothing)
-- [ ] **REND-03**: Building models defined (houses 3 variants, offices 2, stores 2, roads, parks, party halls, cleaning depots)
+- [x] **REND-03**: Building models defined (houses 3 variants, offices 2, stores 2, roads, parks, party halls, cleaning depots)
 - [x] **REND-04**: Character animation states (idle, walk, work, party, clean, sleep, build) with interpolation between simulation ticks
 
 ### Simulation

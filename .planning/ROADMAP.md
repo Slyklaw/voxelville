@@ -14,7 +14,7 @@ Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Engine Foundation** - Three.js renderer, camera, infrastructure
 - [x] **Phase 2: Characters** - Animated character models with smooth movement
-- [ ] **Phase 3: Buildings** - Building models and grid placement
+- [x] **Phase 3: Buildings** - Building models and grid placement
 - [ ] **Phase 4: Simulation** - Autonomous citizen behavior with needs and AI
 - [ ] **Phase 5: UI Controls** - Play/Work slider and city statistics HUD
 - [ ] **Phase 6: Population Growth** - Automatic city growth and expansion
@@ -61,8 +61,8 @@ Plans:
 **Plans**: 2 plans
 
 Plans:
-- [ ] 03-01: Building model definitions and voxel mesh generation
-- [ ] 03-02: Grid placement system with road network and building adjacency rules
+- [x] 03-01: Building model definitions and voxel mesh generation
+- [x] 03-02: Grid placement system with road network and building adjacency rules
 
 ### Phase 4: Simulation
 **Goal**: Users can see autonomous citizen behavior driven by needs and AI
@@ -116,7 +116,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 |-------|----------------|--------|-----------|
 | 1. Engine Foundation | 3/3 | Complete | 2026-03-11 |
 | 2. Characters | 2/2 | Complete | 2026-03-11 |
-| 3. Buildings | 0/2 | Not started | - |
+| 3. Buildings | 2/2 | Complete | 2026-03-11 |
 | 4. Simulation | 0/3 | Not started | - |
 | 5. UI Controls | 0/2 | Not started | - |
 | 6. Population Growth | 0/2 | Not started | - |
