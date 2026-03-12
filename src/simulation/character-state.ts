@@ -1,4 +1,5 @@
 import * as THREE from 'three';
+import { Needs, Task } from './types';
 
 /**
  * Animation states for characters
@@ -25,6 +26,21 @@ export interface CharacterSimState {
   modelId: string;
   /** Index in InstancedPool */
   instanceIndex: number;
+  /** Needs system (0-1, where 1 = urgent). Per SIM-01 */
+  needs: Needs;
+  /** Personality traits (-1 to 1). For utility-based AI task selection */
+  personality: {
+    playfulness: number;  // -1 = very diligent, +1 = very playful
+    diligence: number;    // -1 = lazy, +1 = very hardworking
+  };
+  /** Current task being executed (null if idle) */
+  currentTask: Task | null;
+  /** Task queue for future tasks */
+  taskQueue: Task[];
+  /** Current path from A* pathfinding (null if no path) */
+  currentPath: THREE.Vector3[] | null;
+  /** Current index in path (for movement along path) */
+  pathIndex: number;
 }
 
 /**
@@ -118,6 +134,15 @@ export function createSimState(
     tickTimestamp: timestamp,
     modelId,
     instanceIndex: -1, // Will be set when added to renderer
+    needs: { hunger: 0.1, energy: 0.1, social: 0.1, hygiene: 0.1 },
+    personality: {
+      playfulness: Math.random() * 2 - 1,
+      diligence: Math.random() * 2 - 1,
+    },
+    currentTask: null,
+    taskQueue: [],
+    currentPath: null,
+    pathIndex: 0,
   };
 }
 
