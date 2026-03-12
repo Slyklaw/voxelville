@@ -73,3 +73,65 @@ export const TASK_PERSONALITY_FIT: Record<TaskType, { playfulness: number; dilig
   sleep: { playfulness: 0, diligence: 0 },
   shower: { playfulness: 0, diligence: 0.2 },
 };
+
+/**
+ * Building types for runtime instances
+ */
+export type BuildingType = 'house' | 'office' | 'store' | 'park' | 'party_hall' | 'cleaning_depot';
+
+/**
+ * Runtime building instance with occupancy tracking
+ */
+export interface Building {
+  id: number;
+  type: BuildingType;
+  position: THREE.Vector3;
+  capacity: number;    // Max residents/workers
+  occupancy: number;   // Current residents/workers
+  modelId: string;     // Links to BuildingModelDefinition.id
+}
+
+/**
+ * Capacity values per building type
+ * Houses provide housing capacity, offices/stores provide workplace capacity
+ */
+export const BUILDING_CAPACITIES: Record<string, number> = {
+  house_cottage: 2,
+  house_two_storey: 3,
+  house_row_house: 2,
+  office_small: 4,
+  office_tower: 6,
+  store_corner_shop: 2,
+  store_market_stall: 1,
+  park: 0,
+  party_hall: 0,
+  cleaning_depot: 2,
+};
+
+/**
+ * Get capacity for a building model ID
+ */
+export function getBuildingCapacity(modelId: string): number {
+  return BUILDING_CAPACITIES[modelId] || 0;
+}
+
+/**
+ * Check if building type provides housing (for population spawning)
+ */
+export function isHousing(building: Building): boolean {
+  return building.type === 'house';
+}
+
+/**
+ * Check if building type provides workplace (for job assignment)
+ */
+export function isWorkplace(building: Building): boolean {
+  return building.type === 'office' || building.type === 'store' || building.type === 'cleaning_depot';
+}
+
+/**
+ * Check if building has vacancy (occupancy < capacity)
+ */
+export function hasVacancy(building: Building): boolean {
+  return building.occupancy < building.capacity;
+}
