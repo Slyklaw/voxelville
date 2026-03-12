@@ -124,7 +124,7 @@ Plans:
 **Plans**: 1 plan
 
 Plans:
-- [ ] 07-01-PLAN.md — Rework BuildingRenderer and CharacterRenderer for per-instance coloring
+- [x] 07-01-PLAN.md — Rework BuildingRenderer and CharacterRenderer for per-instance coloring
 
 ### Phase 8: Cartoon Shader
 **Goal**: Voxels render with cartoon aesthetic — black outlines and flat shading
@@ -162,6 +162,6 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 ### v1.1: Visual Polish
 
-| 7. Per-Instance Coloring | 0/3 | Not started | - |
+| 7. Per-Instance Coloring | 1/1 | Complete | 2026-03-11 |
 | 8. Cartoon Shader | 0/2 | Not started | - |
 | 9. Positioning & Terrain | 0/3 | Not started | - |

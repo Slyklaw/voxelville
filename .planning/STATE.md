@@ -10,11 +10,11 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 ## Current Position
 
 Phase: 7 of 9 (Per-Instance Coloring)
-Plan: 01 ready to execute
-Status: Plan created and verified ✓
-Last activity: 2026-03-11 — Phase 7 plan created (1 plan, 2 tasks)
+Plan: 01 complete ✓
+Status: All tasks committed successfully
+Last activity: 2026-03-11 — Phase 7 Plan 1 executed (2 tasks, per-instance coloring)
 
-Progress: [░░░░░░░░░░] 0%
+Progress: [██████████] 100%
 
 ## Performance Metrics
 
@@ -35,6 +35,13 @@ Progress: [░░░░░░░░░░] 0%
 
 **v1.1 Milestone:** Visual Polish (per-instance coloring, cartoon shader, positioning fixes)
 
+## Performance Metrics
+
+**Execution Metrics:**
+| Phase | Plan | Duration | Tasks | Files | Completed |
+|-------|------|----------|-------|-------|-----------|
+| 07-per-instance-coloring | 01 | 8min | 2 | 2 | 2026-03-11 |
+
 ## Accumulated Context
 
 ### Decisions
@@ -51,6 +58,7 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - [Phase 4]: Exponential decay formula for needs (rate * 1 + current) for realistic urgency scaling
 - [Phase 4]: Utility scoring: 40% needs, 30% personality, 30% proximity
 - [Phase 4]: A* pathfinding with 1-second cache on RoadGrid (time-sliced for performance)
+- [Phase 7]: Per-instance coloring via neutral white material + setColorAt() per-voxel
 
 ### Phase 1 Accomplishments
 
@@ -101,6 +109,14 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - Housing vacancy detection from buildings
 - Happiness threshold gates for population growth
 - SimulationLoop extended with spawn and construction tick logic
+
+### Phase 7 Accomplishments
+
+- BuildingRenderer reworked for per-instance coloring (neutral material + setColorAt())
+- CharacterRenderer reworked for per-instance coloring (neutral material + setColorAt())
+- materialToColor() helper for converting material names to THREE.Color
+- Pool sizing: model.voxels.length * maxInstances for capacity
+- All update methods now update ALL voxel instances for buildings/characters
 
 ## Session Continuity
 
