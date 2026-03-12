@@ -104,6 +104,14 @@ Which phases cover which requirements. Updated during roadmap creation.
 - Mapped to phases: 17
 - Unmapped: 0 ✓
 
+**Phase Distribution:**
+- Phase 1 (Engine Foundation): 5 requirements (REND-01, UI-03, INFRA-01, INFRA-03, INFRA-04)
+- Phase 2 (Characters): 3 requirements (REND-02, REND-04, INFRA-02)
+- Phase 3 (Buildings): 1 requirement (REND-03)
+- Phase 4 (Simulation): 3 requirements (SIM-01, SIM-02, SIM-03)
+- Phase 5 (UI Controls): 3 requirements (UI-01, UI-02, GROW-03)
+- Phase 6 (Population Growth): 2 requirements (GROW-01, GROW-02)
+
 ---
 *Requirements defined: 2026-03-11*
 *Last updated: 2026-03-11 after initial definition*
