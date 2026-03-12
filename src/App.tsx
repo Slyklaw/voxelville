@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
-import { initRenderer, render } from './engine/renderer';
+import { initRenderer, createOutlineFor, renderWithOutlines, MeshWithOutline } from './engine/renderer';
 import { getVoxelGeometry } from './engine/voxel-mesh';
 import { getMaterial } from './engine/materials';
 import { OrbitCamera } from './engine/camera';
@@ -56,6 +56,12 @@ function App() {
 
     for (const pool of pools.values()) {
       ctx.scene.add(pool.meshInstance);
+    }
+
+    // Create outline pairs for terrain pools
+    const outlinePairs: MeshWithOutline[] = [];
+    for (const pool of pools.values()) {
+      outlinePairs.push(createOutlineFor(pool.meshInstance));
     }
 
     // Characters
@@ -127,6 +133,14 @@ function App() {
       if (sim) sim.instanceIndex = index;
     }
 
+    // Create outline pairs for building and character meshes
+    for (const mesh of buildingRenderer.getMeshes()) {
+      outlinePairs.push(createOutlineFor(mesh));
+    }
+    for (const mesh of charRenderer.getMeshes()) {
+      outlinePairs.push(createOutlineFor(mesh));
+    }
+
     // Render loop
     let running = true;
     function animate(): void {
@@ -144,7 +158,7 @@ function App() {
         );
       }
 
-      render(ctx);
+      renderWithOutlines(ctx, outlinePairs);
     }
     animate();
 
@@ -158,6 +172,9 @@ function App() {
       for (const pool of pools.values()) {
         ctx.scene.remove(pool.meshInstance);
         pool.dispose();
+      }
+      for (const pair of outlinePairs) {
+        pair.outline.dispose();
       }
       ctx.cleanup();
     };

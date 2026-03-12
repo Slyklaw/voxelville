@@ -1,10 +1,51 @@
 import * as THREE from 'three';
+import { OutlineRenderer } from './outline-renderer';
 
 export interface RendererContext {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
   cleanup: () => void;
+}
+
+// Type for mesh-outline pairs
+export interface MeshWithOutline {
+  mesh: THREE.InstancedMesh;
+  outline: OutlineRenderer;
+}
+
+/**
+ * Create an OutlineRenderer for an InstancedMesh.
+ * Returns a MeshWithOutline pair for use in renderWithOutlines().
+ */
+export function createOutlineFor(mesh: THREE.InstancedMesh): MeshWithOutline {
+  return {
+    mesh,
+    outline: new OutlineRenderer(mesh),
+  };
+}
+
+/**
+ * Two-pass render: outlines first, then main meshes.
+ * @param ctx - Renderer context
+ * @param pairs - Array of mesh+outline pairs to render
+ * @param updateCamera - Optional camera update callback
+ */
+export function renderWithOutlines(
+  ctx: RendererContext,
+  pairs: MeshWithOutline[],
+  updateCamera?: () => void,
+): void {
+  if (updateCamera) updateCamera();
+
+  // Pass 1: Render outlines (black back-face silhouette)
+  for (const pair of pairs) {
+    pair.outline.update(pair.mesh);
+    pair.outline.render(ctx.renderer, ctx.scene, ctx.camera);
+  }
+
+  // Pass 2: Render main meshes on top
+  ctx.renderer.render(ctx.scene, ctx.camera);
 }
 
 export function initRenderer(canvas: HTMLCanvasElement): RendererContext {
