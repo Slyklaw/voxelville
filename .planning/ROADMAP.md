@@ -32,9 +32,9 @@ Decimal phases appear between their surrounding integers in numeric order.
 **Plans**: 3 plans
 
 Plans:
-- [ ] 01-01: Project setup with Vite, TypeScript, Three.js, and React integration
-- [ ] 01-02: InstancedMesh voxel renderer with seeded world generation
-- [ ] 01-03: Isometric orbit camera and React canvas mounting with refs
+- [ ] 01-01-PLAN.md — Project setup with Vite, TypeScript, Three.js, React, and Tailwind
+- [ ] 01-02-PLAN.md — InstancedMesh voxel renderer with seeded deterministic world generation
+- [ ] 01-03-PLAN.md — OrbitCamera with mouse controls and React canvas ref mounting
 
 ### Phase 2: Characters
 **Goal**: Users can see animated characters in the voxel world with smooth movement
