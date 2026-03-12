@@ -12,7 +12,7 @@ See: .planning/PROJECT.md (updated 2026-03-11)
 Phase: 10 (tests written and run)
 Plan: —
 Status: Tests complete, bugs identified
-Last activity: 2026-03-12 — Plan 02-02 (animation system) documented and committed
+Last activity: 2026-03-12 — Plan 06-01 (population growth) summary created
 
 Progress: ░░░░░░░░░░ (v1.2: 0/1 phases)
 
@@ -148,5 +148,5 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 ## Session Continuity
 
 Last session: 2026-03-12
-Status: **Phase 02-characters plan 02-02 documented — animation system summary created**
+Status: **Phase 06-population-growth plan 06-01 completed — population growth summary created**
 Resume file: None
