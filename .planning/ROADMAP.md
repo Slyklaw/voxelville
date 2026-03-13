@@ -166,7 +166,8 @@ Plans:
   3. Tests verify all material definitions return valid THREE.Color values
   4. Tests verify BuildingRenderer creates correct number of instances with correct colors
   5. Tests verify CharacterRenderer creates correct instances with correct colors
-**Plans**: TBD (tests to be written)
+  6. Buildings positioned correctly on terrain with no voxels below terrain surface
+**Plans**: 2 plans
 
 ## Progress
 
@@ -194,3 +195,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 Plans:
 - [x] 10-01-PLAN.md — Write comprehensive test suite for models, materials, renderers, and positioning
+- [ ] 10-02-PLAN.md — Fix building positioning bug (voxels below terrain)
