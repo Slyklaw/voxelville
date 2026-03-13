@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
-**Current focus:** v1.2 Visual Verification & Tests — Defining requirements
+**Current focus:** v1.2 complete — Gap closure for building positioning bug
 
 ## Current Position
 
-Phase: 10 (tests written and run)
+Phase: 10 (complete)
 Plan: —
-Status: Tests complete, bugs identified
-Last activity: 2026-03-13 — Phase 10 context gathered
+Status: Phase 10 complete, 1 gap identified for gap-closure
+Last activity: 2026-03-13 — Phase 10 verification complete
 
-Progress: ░░░░░░░░░░ (v1.2: 0/1 phases)
+Progress: ██████████ (v1.2: 1/1 phases complete)
 
 ## Performance Metrics
 
@@ -42,12 +42,13 @@ Progress: ░░░░░░░░░░ (v1.2: 0/1 phases)
 | 9. Positioning & Terrain | 1 | ✓ Complete |
 
 **Total plans completed (v1.0 + v1.1):** 17
+**Total plans completed (v1.0 + v1.1 + v1.2):** 18
 
 **v1.2 Milestone:** Visual Verification & Tests (20 comprehensive test requirements)
 
 | Phase | Plans | Status |
 |-------|-------|--------|
-| 10. Visual Verification Tests | 0 | ○ Not started |
+| 10. Visual Verification Tests | 1 | ✓ Complete |
 | Phase 02-characters P02-02 | pre-executed | 4 tasks | 3 files |
 
 ## Accumulated Context
@@ -145,8 +146,15 @@ Decisions are logged in PROJECT.md Key Decisions table. Recent decisions affecti
 - Characters spawned at terrain height (standing on surface)
 - Roads placed at terrain height + 0.5
 
+### Phase 10 Accomplishments
+
+- 129 tests written covering all VIZ-01 through VIZ-20 requirements
+- 4 test files: models.test.ts, materials.test.ts, renderer.test.ts, positioning.test.ts
+- Building positioning bug identified (voxels below terrain when terrain varies)
+- Gap documented for future gap-closure cycle
+
 ## Session Continuity
 
-Last session: 2026-03-12
-Status: **Phase 06-population-growth plan 06-01 completed — population growth summary created**
+Last session: 2026-03-13
+Status: **Phase 10 complete — 129 tests passing, 1 gap identified for building positioning**
 Resume file: None
