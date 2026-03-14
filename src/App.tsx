@@ -72,13 +72,12 @@ function App() {
     const buildingRenderer = new BuildingRenderer(ctx.scene);
     const roadGrid = new RoadGrid();
 
-    // Build road cross - 3-wide roads, raised above terrain for visibility
+    // Build road cross - 3-wide roads, raised HIGH for debugging
     // Horizontal road (runs east-west, covers z=-1,0,1)
     for (let x = -20; x <= 20; x++) {
       for (let dz = -1; dz <= 1; dz++) {
         roadGrid.placeRoad(x, dz);
-        const terrainY = getTerrainHeight(world, x, dz);
-        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, terrainY + 1, dz));
+        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, 10, dz));
       }
     }
     // Vertical road (runs north-south, covers x=-1,0,1, excluding intersection)
@@ -86,8 +85,7 @@ function App() {
       if (z >= -1 && z <= 1) continue; // Skip intersection (already placed)
       for (let dx = -1; dx <= 1; dx++) {
         roadGrid.placeRoad(dx, z);
-        const terrainY = getTerrainHeight(world, dx, z);
-        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(dx, terrainY + 1, z));
+        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(dx, 10, z));
       }
     }
 
