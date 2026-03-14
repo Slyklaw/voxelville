@@ -28,8 +28,8 @@ function App() {
     const orbitCamera = new OrbitCamera(ctx.camera, canvas);
     canvas.style.cursor = 'grab';
 
-    // Generate terrain
-    const world = createWorld(20);
+    // Generate terrain (larger world so town has breathing room)
+    const world = createWorld(40);
     world.generate(42);
     const tiles = world.getTiles();
     const colorCounts = new Map<string, number>();
@@ -86,7 +86,8 @@ function App() {
       }
     }
 
-    // Create initial buildings
+    // Create initial buildings - spread out with natural spacing
+    // Buildings placed adjacent to roads but with 2-4 tile gaps between them
     const buildingInstances: BuildingInstance[] = [];
     let bid = 0;
 
@@ -111,12 +112,25 @@ function App() {
       });
     }
 
-    addBuilding('house_cottage', new THREE.Vector3(2, 0, 1), 4, 'house');
-    addBuilding('house_two_storey', new THREE.Vector3(2, 0, -1), 6, 'house');
-    addBuilding('house_row_house', new THREE.Vector3(-2, 0, 1), 5, 'house');
-    addBuilding('office_tower', new THREE.Vector3(5, 0, 0), 10, 'office');
-    addBuilding('store_market_stall', new THREE.Vector3(0, 0, 5), 3, 'store');
-    addBuilding('park_basic', new THREE.Vector3(3, 0, 3), 999, 'park');
+    // Houses along north road (z < 0 side) - spaced 4 tiles apart
+    addBuilding('house_cottage', new THREE.Vector3(1, 0, -2), 4, 'house');
+    addBuilding('house_two_storey', new THREE.Vector3(1, 0, -7), 6, 'house');
+    addBuilding('house_row_house', new THREE.Vector3(-1, 0, -4), 5, 'house');
+
+    // Offices along east road (x > 0 side)
+    addBuilding('office_small', new THREE.Vector3(7, 0, 1), 7, 'office');
+    addBuilding('office_tower', new THREE.Vector3(12, 0, -1), 10, 'office');
+
+    // Stores along south road (z > 0 side)
+    addBuilding('store_corner_shop', new THREE.Vector3(-1, 0, 3), 4, 'store');
+    addBuilding('store_market_stall', new THREE.Vector3(1, 0, 8), 3, 'store');
+
+    // Park in the corner - away from roads
+    addBuilding('park_basic', new THREE.Vector3(6, 0, 6), 999, 'park');
+
+    // Party hall and depot on west side
+    addBuilding('party_hall', new THREE.Vector3(-6, 0, 2), 50, 'party_hall');
+    addBuilding('cleaning_depot', new THREE.Vector3(-6, 0, -3), 2, 'cleaning_depot');
 
     // Simulation loop with growth system
     const simLoop = new SimulationLoop(stateManager, buildingInstances, 42);
@@ -127,7 +141,7 @@ function App() {
     simLoop.setWorld(world);
     simLoop.start();
 
-    // Spawn initial characters
+    // Spawn initial characters near the town center
     for (let i = 0; i < 20; i++) {
       const model = ALL_CHARACTER_MODELS[i % ALL_CHARACTER_MODELS.length];
       const x = rng.nextInt(-8, 8);
