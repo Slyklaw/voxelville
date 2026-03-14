@@ -1,14 +1,17 @@
 /**
  * Building model definitions for Voxelville
- * 
- * Each building is a simple voxel structure:
- * - Houses: 3-5 voxels wide × 4-6 voxels tall × 3-5 deep
- * - Offices: 3-4 voxels wide × 5-8 voxels tall × 3-4 deep
- * - Stores: 2-3 voxels wide × 2-3 voxels tall × 2-3 deep
- * - Roads: flat 1×1×0 tiles
- * - Parks: 3×3×1 with vegetation
- * - Party Hall: 3×3×3 with decorations
- * - Cleaning Depot: 2×2×2 simple structure
+ *
+ * Each building is a simple voxel structure.
+ * Scale: 1 voxel ≈ 0.4m, adult character = 4 voxels tall
+ *
+ * Realistic heights (character can fit inside):
+ * - Houses: 6-8 voxels tall (single/two storey + roof)
+ * - Offices: 7-10 voxels tall (multi-storey)
+ * - Stores: 4-6 voxels tall (single storey + awning)
+ * - Roads: flat 1×1×1 tiles
+ * - Parks: 3×3 with 5-voxel tree
+ * - Party Hall: 6 voxels tall (event space)
+ * - Cleaning Depot: 4 voxels tall (utility)
  */
 
 export interface BuildingModelDefinition {
@@ -165,35 +168,38 @@ function createParkVoxels(
   flowerColors: string[],
 ): Array<{ x: number; y: number; z: number; color: string }> {
   const voxels: Array<{ x: number; y: number; z: number; color: string }> = [];
-  
+
   // Create grass base
   for (let x = 0; x < width; x++) {
     for (let z = 0; z < depth; z++) {
       voxels.push({ x, y: 0, z, color: grassColor });
     }
   }
-  
-  // Add a tree in the center
+
+  // Add a tree in the center - taller than characters (5 voxels trunk + leaves)
   const treeX = Math.floor(width / 2);
   const treeZ = Math.floor(depth / 2);
-  
-  // Tree trunk
+
+  // Tree trunk (3 voxels tall)
   voxels.push({ x: treeX, y: 1, z: treeZ, color: treeTrunkColor });
   voxels.push({ x: treeX, y: 2, z: treeZ, color: treeTrunkColor });
-  
-  // Tree leaves
+  voxels.push({ x: treeX, y: 3, z: treeZ, color: treeTrunkColor });
+
+  // Tree leaves (on top, 2 layers)
   for (let dx = -1; dx <= 1; dx++) {
     for (let dz = -1; dz <= 1; dz++) {
-      voxels.push({ x: treeX + dx, y: 3, z: treeZ + dz, color: treeLeavesColor });
+      voxels.push({ x: treeX + dx, y: 4, z: treeZ + dz, color: treeLeavesColor });
     }
   }
-  
+  // Top layer - single voxel crown
+  voxels.push({ x: treeX, y: 5, z: treeZ, color: treeLeavesColor });
+
   // Add a bench
   const benchX = treeX - 1;
   const benchZ = treeZ + 1;
   voxels.push({ x: benchX, y: 1, z: benchZ, color: benchColor });
   voxels.push({ x: benchX + 1, y: 1, z: benchZ, color: benchColor });
-  
+
   // Add flowers
   const flowerPositions = [
     { x: 0, z: 0 },
@@ -267,56 +273,59 @@ function createCleaningDepotVoxels(
 }
 
 // House models (3 variants)
+// Heights increased so characters (4 voxels) can fit inside
 export const HOUSE_MODELS: BuildingModelDefinition[] = [
   {
     id: 'house_cottage',
     type: 'house',
-    size: [3, 4, 3],
-    voxels: createHouseVoxels(3, 4, 3, 'brick', 'roof', 'window', 'door'),
+    size: [3, 6, 3],
+    voxels: createHouseVoxels(3, 6, 3, 'brick', 'roof', 'window', 'door'),
   },
   {
     id: 'house_two_storey',
     type: 'house',
-    size: [4, 6, 4],
-    voxels: createHouseVoxels(4, 6, 4, 'brick', 'roof', 'window', 'door'),
+    size: [4, 8, 4],
+    voxels: createHouseVoxels(4, 8, 4, 'brick', 'roof', 'window', 'door'),
   },
   {
     id: 'house_row_house',
     type: 'house',
-    size: [2, 5, 5],
-    voxels: createHouseVoxels(2, 5, 5, 'brick', 'roof', 'window', 'door'),
+    size: [2, 7, 5],
+    voxels: createHouseVoxels(2, 7, 5, 'brick', 'roof', 'window', 'door'),
   },
 ];
 
 // Office models (2 variants)
+// Heights increased for realistic proportions
 export const OFFICE_MODELS: BuildingModelDefinition[] = [
   {
     id: 'office_small',
     type: 'office',
-    size: [4, 5, 4],
-    voxels: createOfficeVoxels(4, 5, 4, 'office', 'window'),
+    size: [4, 7, 4],
+    voxels: createOfficeVoxels(4, 7, 4, 'office', 'window'),
   },
   {
     id: 'office_tower',
     type: 'office',
-    size: [3, 8, 3],
-    voxels: createOfficeVoxels(3, 8, 3, 'office', 'window'),
+    size: [3, 10, 3],
+    voxels: createOfficeVoxels(3, 10, 3, 'office', 'window'),
   },
 ];
 
 // Store models (2 variants)
+// Heights increased - stores must be taller than adult characters (4 voxels)
 export const STORE_MODELS: BuildingModelDefinition[] = [
   {
     id: 'store_corner_shop',
     type: 'store',
-    size: [3, 3, 3],
-    voxels: createStoreVoxels(3, 3, 3, 'store', 'awning', 'window'),
+    size: [3, 5, 3],
+    voxels: createStoreVoxels(3, 5, 3, 'store', 'awning', 'window'),
   },
   {
     id: 'store_market_stall',
     type: 'store',
-    size: [2, 2, 2],
-    voxels: createStoreVoxels(2, 2, 2, 'store', 'awning', 'window'),
+    size: [2, 4, 2],
+    voxels: createStoreVoxels(2, 4, 2, 'store', 'awning', 'window'),
   },
 ];
 
@@ -330,12 +339,12 @@ export const ROAD_TILES: BuildingModelDefinition[] = [
   },
 ];
 
-// Park tile (3x3 with vegetation)
+// Park tile (3x3 with vegetation) - tree is 6 voxels tall (taller than characters)
 export const PARK_TILES: BuildingModelDefinition[] = [
   {
     id: 'park_basic',
     type: 'park',
-    size: [3, 4, 3],
+    size: [3, 6, 3],
     voxels: createParkVoxels(3, 3, 'grass', 'tree-trunk', 'tree-leaves', 'bench', [
       'flower-pink',
       'flower-yellow',
@@ -345,23 +354,23 @@ export const PARK_TILES: BuildingModelDefinition[] = [
   },
 ];
 
-// Party Hall
+// Party Hall - taller for event space
 export const PARTY_HALLS: BuildingModelDefinition[] = [
   {
     id: 'party_hall',
     type: 'party_hall',
-    size: [3, 3, 3],
-    voxels: createPartyHallVoxels(3, 3, 3, 'store', 'bunting'),
+    size: [3, 6, 3],
+    voxels: createPartyHallVoxels(3, 6, 3, 'store', 'bunting'),
   },
 ];
 
-// Cleaning Depot
+// Cleaning Depot - utility building, modest height
 export const CLEANING_DEPOTS: BuildingModelDefinition[] = [
   {
     id: 'cleaning_depot',
     type: 'cleaning_depot',
-    size: [2, 2, 2],
-    voxels: createCleaningDepotVoxels(2, 2, 2, 'stone'),
+    size: [2, 4, 2],
+    voxels: createCleaningDepotVoxels(2, 4, 2, 'stone'),
   },
 ];
 
