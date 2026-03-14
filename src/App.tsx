@@ -170,11 +170,11 @@ function App() {
     // Add all outline meshes to scene once (hidden by default)
     initOutlines(ctx, outlinePairs);
 
-    // Render loop
+    // Render loop (using setTimeout to bypass vsync for accurate FPS measurement)
     let running = true;
     function animate(): void {
       if (!running) return;
-      requestAnimationFrame(animate);
+      setTimeout(animate, 0);
 
       for (const entityId of stateManager.getAllEntityIds()) {
         const renderState = stateManager.getRenderState(entityId);
