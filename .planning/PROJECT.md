@@ -8,32 +8,30 @@ VoxelVille is a single-screen, browser-based city builder where a cartoony voxel
 
 A city that lives without you. The joy is watching it happen — citizens bustling to jobs, kids chasing each other, parties erupting on rooftops. If the autonomous simulation doesn't feel alive, nothing else matters.
 
-## Current Milestone: v1.2 Visual Verification & Tests
+## Current State: v1.1 Shipped (2026-03-14)
 
-**Goal:** Write comprehensive tests to identify and fix rendering issues where voxel models appear scrambled/wrong colors in the viewport.
+VoxelVille v1.1 "Visual Polish" is complete. The game now renders with proper per-instance coloring, cartoon outlines, and correct terrain positioning.
 
-**Target features:**
-- Unit tests for voxel model definitions (correct colors, positions, dimensions)
-- Integration tests for renderer output verification
-- Visual regression tests comparing expected vs actual model appearance
-- Test infrastructure for snapshot-based rendering verification
-- Fix any identified rendering bugs found by tests
+**Shipped:**
+- 10 phases, 19 plans, 25 requirements
+- 4,917 LOC TypeScript
+- 33 files changed (+2,497 / -112 lines)
+
+**Next:** Planning v2.0 milestone — awaiting user direction on next focus area.
 
 ## Requirements
 
 ### Validated
 
-- ✓ Core simulation engine complete (v1.0)
-- ✓ All 6 phases executed, 17/17 requirements shipped
+- ✓ v1.0 Core Simulation — 17/17 requirements (Phases 1-6)
+- ✓ v1.1 Visual Polish — 8/8 requirements (Phases 7-10)
+  - ✓ VIS-01 through VIS-03: Per-instance coloring
+  - ✓ VIS-04 through VIS-05: Cartoon shader
+  - ✓ VIS-06 through VIS-08: Terrain positioning
 
 ### Active
 
-- [ ] Write unit tests for voxel model definitions (VIZ-01 through VIZ-05)
-- [ ] Write unit tests for material colors (VIZ-06 through VIZ-09)
-- [ ] Write unit tests for renderer output (VIZ-10 through VIZ-13)
-- [ ] Write unit tests for positioning (VIZ-14 through VIZ-17)
-- [ ] Write unit tests for rendering pipeline (VIZ-18 through VIZ-20)
-- [ ] Fix rendering bugs identified by tests
+- [ ] Define v2.0 requirements with `/gsd-new-milestone`
 
 ### Out of Scope
 
@@ -45,16 +43,16 @@ A city that lives without you. The joy is watching it happen — citizens bustli
 
 ## Context
 
-- Detailed design plan exists at `design.md` covering tech stack, art direction, simulation design, building models, character models, project structure, and milestones
 - Tech stack: TypeScript + Three.js + React + Vite + Tailwind CSS
 - ECS architecture with utility-based AI for autonomous citizen behavior
 - MagicaVoxel `.vox` files for assets, converted to Three.js mesh at load time
-- Performance targets: 60fps, ≤500 residents, ≤100k voxels rendered
-- **Screenshot analysis (v1.2 motivation):** The viewport shows scrambled model rendering - buildings appear as solid colored blobs without proper per-voxel coloring, character models are unrecognizable blocks, and some models appear completely black/gray. Tests needed to isolate whether the issue is in model definitions, material mapping, or renderer instancing.
+- Performance: 60fps with 500+ voxels rendered
+- **v1.1 shipped:** Per-instance coloring, cartoon outline shader, terrain positioning fix, visual verification test suite (130 tests)
+- **Archived:** Milestone artifacts in `.planning/milestones/v1.1-ROADMAP.md`
 
 ## Constraints
 
-- **Tech stack**: TypeScript strict mode, Three.js rendering, React UI — per design.md
+- **Tech stack**: TypeScript strict mode, Three.js rendering, React UI
 - **Platform**: GitHub Pages — static site, no server, all logic client-side
 - **Performance**: 60fps with 500 residents, ≤100k voxels, ≤5ms simulation tick
 - **Asset pipeline**: MagicaVoxel → .vox → TypeScript voxel-array converter
@@ -63,17 +61,14 @@ A city that lives without you. The joy is watching it happen — citizens bustli
 
 | Decision | Rationale | Outcome |
 |----------|-----------|---------|
-| Browser-based (Three.js) | Zero install friction, runs in a tab | ✓ Validated — working renderer in Phase 1 |
-| InstancedMesh from day one | Thousands of cubes need batched draw calls | ✓ Validated — 60fps with 500+ voxels |
-| Seeded deterministic RNG | Same seed = same world for sharing | ✓ Validated — mulberry32 PRNG working |
-| React refs for canvas | Decouple Three.js render loop from React re-renders | ✓ Validated — canvas mounts once |
-| Custom ECS over existing lib | Lightweight simulation, full control over component layout | ✓ Validated — all 6 phases complete |
-| Custom VoxelMeshBuilder | Cartoony cubes need per-face color and rounded edges | — Pending v1.1 |
-| Utility-based AI (not FSM) | More emergent behavior, slider integration via weighted scoring | ✓ Validated — simulation working |
-| GitHub Pages deployment | Free static hosting, easy to share playable demo | — Pending post-v1.1 |
-| Per-instance coloring | Multi-voxel models need InstancedMesh.setColorAt() for proper colors | — v1.1 Phase 7 |
-| Cartoon outline shader | Back-face render pass for black outlines per voxel | — v1.1 Phase 8 |
-| Terrain/building positioning | Buildings must sit on top of terrain surface | — v1.1 Phase 9 |
+| Browser-based (Three.js) | Zero install friction, runs in a tab | ✓ Validated |
+| InstancedMesh from day one | Thousands of cubes need batched draw calls | ✓ Validated — 60fps |
+| Seeded deterministic RNG | Same seed = same world for sharing | ✓ Validated |
+| Custom ECS over existing lib | Lightweight simulation, full control | ✓ Validated |
+| Utility-based AI (not FSM) | More emergent behavior | ✓ Validated |
+| Per-instance coloring | Multi-voxel models need correct colors | ✓ Shipped v1.1 |
+| Cartoon outline shader | Back-face render pass for aesthetic | ✓ Shipped v1.1 |
+| Terrain-aware positioning | Buildings must sit on terrain surface | ✓ Shipped v1.1 |
 
 ---
-*Last updated: 2026-03-11 after v1.2 milestone initialization*
+*Last updated: 2026-03-14 after v1.1 milestone completion*

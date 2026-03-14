@@ -28,7 +28,7 @@
 
 ---
 
-## v1.1 — Visual Polish (2026-03-12)
+## v1.1 — Visual Polish (Shipped: 2026-03-14)
 
 **Goal:** Fix rendering pipeline so buildings, characters, and terrain render correctly with proper colors and cartoon aesthetic.
 
@@ -37,9 +37,12 @@
 | 7 | Per-Instance Coloring | 1 | ✓ Complete |
 | 8 | Cartoon Shader | 1 | ✓ Complete |
 | 9 | Positioning & Terrain | 1 | ✓ Complete |
+| 10 | Visual Verification Tests | 2 | ✓ Complete |
 
-**Requirements shipped:** 8/8
-**Total plans:** 3
+**Requirements shipped:** 8/8 (VIS-01 through VIS-08)
+**Total plans:** 5
+**Timeline:** 3 days (2026-03-11 → 2026-03-13)
+**Files changed:** 33 files, +2,497 / -112 lines
 
 ### What shipped:
 - Per-instance voxel coloring via InstancedMesh.setColorAt()
@@ -50,24 +53,28 @@
 - Terrain noise bug fixed (removed rng.next() from noise calculation)
 - Deterministic terrain generation (smooth, no random holes)
 - Terrain-aware building/character positioning (getTerrainHeight())
+- Visual verification test suite: 130 tests covering models, materials, renderers
+- Building positioning fix: getMaxTerrainHeightInArea() for footprint-based placement
+
+### Key accomplishments:
+1. **Per-Instance Coloring** — Buildings/characters render with distinct wall, roof, window, door, hair, skin, clothing colors
+2. **Cartoon Outline Shader** — Back-face render pass creates black outlines around every voxel
+3. **Terrain & Positioning Fix** — Fixed terrain noise bug, buildings/characters spawn on surface not buried
+4. **Visual Verification Test Suite** — 130 tests covering all building/character models
+5. **Building Position Bug Fix** — getMaxTerrainHeightInArea() prevents voxels below terrain
+
+### Archive:
+- Milestone roadmap: `.planning/milestones/v1.1-ROADMAP.md`
+- Milestone requirements: `.planning/milestones/v1.1-REQUIREMENTS.md`
+- Phase directories: `.planning/milestones/v1.1-phases/`
 
 ---
 
 ## Total Project (v1.0 + v1.1)
 
 **Total requirements:** 25 (17 core + 8 visual polish)
-**Total phases:** 9
-**Total plans:** 17
+**Total phases:** 10
+**Total plans:** 19
 
 ---
 
-## v1.2 — Visual Verification & Tests (in progress)
-
-**Goal:** Write comprehensive tests to identify and fix rendering issues where voxel models appear scrambled/wrong colors in viewport.
-
-| Phase | Name | Plans | Status |
-|-------|------|-------|--------|
-| 10 | Visual Verification Tests | TBD | ○ Not started |
-
-**Requirements:** 20 VIZ requirements
-**Target:** Identify why models in screenshot show wrong colors, scrambled appearance
