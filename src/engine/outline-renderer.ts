@@ -2,8 +2,11 @@ import * as THREE from 'three';
 
 export class OutlineRenderer {
   private outlineMesh: THREE.InstancedMesh;
+  private isStatic: boolean;
+  private hasInitialized: boolean = false;
 
-  constructor(sourceMesh: THREE.InstancedMesh) {
+  constructor(sourceMesh: THREE.InstancedMesh, staticMesh: boolean = false) {
+    this.isStatic = staticMesh;
     const outlineMaterial = new THREE.MeshBasicMaterial({
       color: 0x000000,
       side: THREE.BackSide,
@@ -19,10 +22,13 @@ export class OutlineRenderer {
 
   /**
    * Copy instance matrices from source mesh and scale for outline effect.
-   * Must be called each frame before renderOutline().
+   * For static meshes, only updates once then skips subsequent calls.
    * @param sourceMesh - The InstancedMesh to generate outlines for
    */
   update(sourceMesh: THREE.InstancedMesh): void {
+    // Skip update for static outlines after first initialization
+    if (this.isStatic && this.hasInitialized) return;
+
     const dummy = new THREE.Object3D();
 
     for (let i = 0; i < sourceMesh.count; i++) {
@@ -37,20 +43,29 @@ export class OutlineRenderer {
 
     this.outlineMesh.count = sourceMesh.count;
     this.outlineMesh.instanceMatrix.needsUpdate = true;
+    this.hasInitialized = true;
   }
 
   /**
-   * Add outline mesh to scene (for batched rendering).
+   * Add outline mesh to scene once during initialization.
    */
   addToScene(scene: THREE.Scene): void {
+    this.outlineMesh.visible = false;
     scene.add(this.outlineMesh);
   }
 
   /**
-   * Remove outline mesh from scene (after batched rendering).
+   * Show outline mesh for outline render pass.
    */
-  removeFromScene(scene: THREE.Scene): void {
-    scene.remove(this.outlineMesh);
+  show(): void {
+    this.outlineMesh.visible = true;
+  }
+
+  /**
+   * Hide outline mesh after outline render pass.
+   */
+  hide(): void {
+    this.outlineMesh.visible = false;
   }
 
   dispose(): void {

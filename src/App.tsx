@@ -1,6 +1,6 @@
 import { useRef, useEffect } from 'react';
 import * as THREE from 'three';
-import { initRenderer, createOutlineFor, renderWithOutlines, MeshWithOutline } from './engine/renderer';
+import { initRenderer, createOutlineFor, initOutlines, renderWithOutlines, MeshWithOutline } from './engine/renderer';
 import { getVoxelGeometry } from './engine/voxel-mesh';
 import { getMaterial } from './engine/materials';
 import { OrbitCamera } from './engine/camera';
@@ -57,10 +57,10 @@ function App() {
       ctx.scene.add(pool.meshInstance);
     }
 
-    // Create outline pairs for terrain pools
+    // Create outline pairs for terrain pools (static - never moves)
     const outlinePairs: MeshWithOutline[] = [];
     for (const pool of pools.values()) {
-      outlinePairs.push(createOutlineFor(pool.meshInstance));
+      outlinePairs.push(createOutlineFor(pool.meshInstance, true));
     }
 
     // Characters
@@ -159,13 +159,16 @@ function App() {
       if (sim) sim.instanceIndex = index;
     }
 
-    // Create outline pairs for building and character meshes
+    // Create outline pairs - buildings are static, characters are dynamic
     for (const mesh of buildingRenderer.getMeshes()) {
-      outlinePairs.push(createOutlineFor(mesh));
+      outlinePairs.push(createOutlineFor(mesh, true));
     }
     for (const mesh of charRenderer.getMeshes()) {
-      outlinePairs.push(createOutlineFor(mesh));
+      outlinePairs.push(createOutlineFor(mesh, false));
     }
+
+    // Add all outline meshes to scene once (hidden by default)
+    initOutlines(ctx, outlinePairs);
 
     // Render loop
     let running = true;

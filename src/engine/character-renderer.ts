@@ -263,7 +263,9 @@ export class CharacterRenderer {
       // Update matrix and push to instanced mesh
       this.dummy.updateMatrix();
       pool.meshInstance.setMatrixAt(index + i, this.dummy.matrix);
-      pool.meshInstance.instanceMatrix.needsUpdate = true;
     }
+
+    // Batch the update flag - set once after all voxels
+    pool.meshInstance.instanceMatrix.needsUpdate = true;
   }
 }

@@ -17,12 +17,28 @@ export interface MeshWithOutline {
 /**
  * Create an OutlineRenderer for an InstancedMesh.
  * Returns a MeshWithOutline pair for use in renderWithOutlines().
+ * @param mesh - The InstancedMesh to outline
+ * @param isStatic - If true, outline matrices are only computed once (for non-moving geometry)
  */
-export function createOutlineFor(mesh: THREE.InstancedMesh): MeshWithOutline {
+export function createOutlineFor(mesh: THREE.InstancedMesh, isStatic: boolean = false): MeshWithOutline {
   return {
     mesh,
-    outline: new OutlineRenderer(mesh),
+    outline: new OutlineRenderer(mesh, isStatic),
   };
+}
+
+/**
+ * Initialize outline meshes - add to scene once (hidden).
+ * @param ctx - Renderer context
+ * @param pairs - Array of mesh+outline pairs
+ */
+export function initOutlines(
+  ctx: RendererContext,
+  pairs: MeshWithOutline[],
+): void {
+  for (const pair of pairs) {
+    pair.outline.addToScene(ctx.scene);
+  }
 }
 
 /**
@@ -39,22 +55,22 @@ export function renderWithOutlines(
 ): void {
   if (updateCamera) updateCamera();
 
-  // Update all outline matrices first
+  // Update all outline matrices (static ones skip after first frame)
   for (const pair of pairs) {
     pair.outline.update(pair.mesh);
   }
 
-  // Add all outline meshes to scene at once
+  // Show all outlines for pass 1
   for (const pair of pairs) {
-    pair.outline.addToScene(ctx.scene);
+    pair.outline.show();
   }
 
-  // Pass 1: Single render for all outlines
+  // Pass 1: Render outlines
   ctx.renderer.render(ctx.scene, ctx.camera);
 
-  // Remove all outline meshes from scene
+  // Hide all outlines
   for (const pair of pairs) {
-    pair.outline.removeFromScene(ctx.scene);
+    pair.outline.hide();
   }
 
   // Pass 2: Render main meshes
