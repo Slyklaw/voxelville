@@ -112,30 +112,30 @@ function App() {
       });
     }
 
-    // --- Northwest quadrant: Residential houses ---
+    // --- City blocks: 1 building per block, 10-unit grid spacing ---
+    // Northwest quadrant: Residential houses (5 blocks)
+    addBuilding('house_cottage', new THREE.Vector3(-15, 0, -5), 4, 'house');
+    addBuilding('house_two_storey', new THREE.Vector3(-15, 0, -15), 6, 'house');
+    addBuilding('house_row_house', new THREE.Vector3(-5, 0, -15), 5, 'house');
     addBuilding('house_cottage', new THREE.Vector3(-5, 0, -5), 4, 'house');
-    addBuilding('house_cottage', new THREE.Vector3(-12, 0, -6), 4, 'house');
-    addBuilding('house_two_storey', new THREE.Vector3(-8, 0, -12), 6, 'house');
-    addBuilding('house_row_house', new THREE.Vector3(-15, 0, -10), 5, 'house');
-    addBuilding('house_two_storey', new THREE.Vector3(-4, 0, -15), 6, 'house');
 
-    // --- Northeast quadrant: Office district ---
-    addBuilding('office_small', new THREE.Vector3(5, 0, -5), 7, 'office');
-    addBuilding('office_tower', new THREE.Vector3(12, 0, -6), 10, 'office');
-    addBuilding('office_small', new THREE.Vector3(8, 0, -14), 7, 'office');
-    addBuilding('office_tower', new THREE.Vector3(15, 0, -12), 10, 'office');
+    // Northeast quadrant: Office district (4 blocks)
+    addBuilding('office_tower', new THREE.Vector3(5, 0, -5), 10, 'office');
+    addBuilding('office_small', new THREE.Vector3(5, 0, -15), 7, 'office');
+    addBuilding('office_tower', new THREE.Vector3(15, 0, -5), 10, 'office');
+    addBuilding('office_small', new THREE.Vector3(15, 0, -15), 7, 'office');
 
-    // --- Southeast quadrant: Commercial / stores ---
-    addBuilding('store_corner_shop', new THREE.Vector3(5, 0, 6), 4, 'store');
-    addBuilding('store_market_stall', new THREE.Vector3(12, 0, 8), 3, 'store');
-    addBuilding('store_corner_shop', new THREE.Vector3(8, 0, 14), 4, 'store');
-    addBuilding('store_market_stall', new THREE.Vector3(16, 0, 6), 3, 'store');
+    // Southeast quadrant: Commercial / stores (4 blocks)
+    addBuilding('store_corner_shop', new THREE.Vector3(5, 0, 5), 4, 'store');
+    addBuilding('store_market_stall', new THREE.Vector3(5, 0, 15), 3, 'store');
+    addBuilding('store_corner_shop', new THREE.Vector3(15, 0, 5), 4, 'store');
+    addBuilding('store_market_stall', new THREE.Vector3(15, 0, 15), 3, 'store');
 
-    // --- Southwest quadrant: Mixed - park, party hall, depot ---
-    addBuilding('park_basic', new THREE.Vector3(-8, 0, 8), 999, 'park');
-    addBuilding('party_hall', new THREE.Vector3(-14, 0, 5), 50, 'party_hall');
-    addBuilding('cleaning_depot', new THREE.Vector3(-6, 0, 14), 2, 'cleaning_depot');
-    addBuilding('park_basic', new THREE.Vector3(-16, 0, 12), 999, 'park');
+    // Southwest quadrant: Community buildings (4 blocks)
+    addBuilding('park_basic', new THREE.Vector3(-5, 0, 5), 999, 'park');
+    addBuilding('party_hall', new THREE.Vector3(-5, 0, 15), 50, 'party_hall');
+    addBuilding('park_basic', new THREE.Vector3(-15, 0, 5), 999, 'park');
+    addBuilding('cleaning_depot', new THREE.Vector3(-15, 0, 15), 2, 'cleaning_depot');
 
     // Simulation loop with growth system
     const simLoop = new SimulationLoop(stateManager, buildingInstances, 42);
