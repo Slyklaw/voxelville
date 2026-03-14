@@ -72,75 +72,86 @@ function App() {
     const buildingRenderer = new BuildingRenderer(ctx.scene);
     const roadGrid = new RoadGrid();
 
-    // Build road cross - 3-wide roads, raised above terrain
-    // Horizontal road (runs east-west, covers z=-1,0,1)
-    for (let x = -20; x <= 20; x++) {
-      for (let dz = -1; dz <= 1; dz++) {
-        roadGrid.placeRoad(x, dz);
-        const terrainY = getTerrainHeight(world, x, dz);
-        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, terrainY + 1, dz));
-      }
-    }
-    // Vertical road (runs north-south, covers x=-1,0,1, excluding intersection)
-    for (let z = -20; z <= 20; z++) {
-      if (z >= -1 && z <= 1) continue; // Skip intersection (already placed)
-      for (let dx = -1; dx <= 1; dx++) {
-        roadGrid.placeRoad(dx, z);
-        const terrainY = getTerrainHeight(world, dx, z);
-        buildingRenderer.addBuilding('road_tile', new THREE.Vector3(dx, terrainY + 1, z));
+    // Build road grid - 3-wide roads to world edges
+    // World is 80x80, coordinates -40 to +39
+    const worldEdge = 39;
+
+    // Helper to place a 3-wide road segment
+    function placeRoadLine(x1: number, z1: number, x2: number, z2: number): void {
+      if (x1 === x2) {
+        // Vertical line (varying z)
+        const minZ = Math.min(z1, z2);
+        const maxZ = Math.max(z1, z2);
+        for (let z = minZ; z <= maxZ; z++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            roadGrid.placeRoad(x1 + dx, z);
+            buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x1 + dx, 1, z));
+          }
+        }
+      } else {
+        // Horizontal line (varying x)
+        const minX = Math.min(x1, x2);
+        const maxX = Math.max(x1, x2);
+        for (let x = minX; x <= maxX; x++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            roadGrid.placeRoad(x, z1 + dz);
+            buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, 1, z1 + dz));
+          }
+        }
       }
     }
 
-    // Create initial buildings - well-spaced town layout
-    // Roads run -20 to +20, buildings placed in quadrants around the crossroads
+    // Horizontal roads (east-west) at z = -20, 0, 20
+    placeRoadLine(-worldEdge, -20, worldEdge, -20);
+    placeRoadLine(-worldEdge, 0, worldEdge, 0);
+    placeRoadLine(-worldEdge, 20, worldEdge, 20);
+
+    // Vertical roads (north-south) at x = -20, 0, 20
+    // Skip center segments already covered by horizontal roads
+    placeRoadLine(-20, -worldEdge, -20, -21);
+    placeRoadLine(-20, 21, -20, worldEdge);
+    placeRoadLine(0, -worldEdge, 0, -21);
+    placeRoadLine(0, 21, 0, worldEdge);
+    placeRoadLine(20, -worldEdge, 20, -21);
+    placeRoadLine(20, 21, 20, worldEdge);
+
+    // City blocks in grid cells between roads
+    // Blocks centered at: x = ±10, ±30 and z = ±10, ±30
     const buildingInstances: BuildingInstance[] = [];
     let bid = 0;
 
-    function addBuilding(
-      modelId: string,
-      pos: THREE.Vector3,
-      cap: number,
-      type: BuildingType,
-    ): void {
-      // Adjust Y to sit on top of terrain
-      const terrainY = getTerrainHeight(world, Math.round(pos.x), Math.round(pos.z));
-      const adjustedPos = new THREE.Vector3(pos.x, terrainY, pos.z);
-
+    function addBuilding(modelId: string, x: number, z: number, cap: number, type: BuildingType): void {
+      const adjustedPos = new THREE.Vector3(x, 1, z);
       buildingRenderer.addBuilding(modelId, adjustedPos);
       buildingInstances.push({
-        id: bid++,
-        type,
-        position: adjustedPos.clone(),
-        capacity: cap,
-        occupancy: 0,
-        modelId,
+        id: bid++, type, position: adjustedPos.clone(),
+        capacity: cap, occupancy: 0, modelId,
       });
     }
 
-    // --- City blocks: 1 building per block, 10-unit grid spacing ---
-    // Northwest quadrant: Residential houses (5 blocks)
-    addBuilding('house_cottage', new THREE.Vector3(-15, 0, -5), 4, 'house');
-    addBuilding('house_two_storey', new THREE.Vector3(-15, 0, -15), 6, 'house');
-    addBuilding('house_row_house', new THREE.Vector3(-5, 0, -15), 5, 'house');
-    addBuilding('house_cottage', new THREE.Vector3(-5, 0, -5), 4, 'house');
+    // Northwest blocks (x<0, z<0): Residential
+    addBuilding('house_cottage', -10, -10, 4, 'house');
+    addBuilding('house_two_storey', -30, -10, 6, 'house');
+    addBuilding('house_row_house', -10, -30, 5, 'house');
+    addBuilding('house_cottage', -30, -30, 4, 'house');
 
-    // Northeast quadrant: Office district (4 blocks)
-    addBuilding('office_tower', new THREE.Vector3(5, 0, -5), 10, 'office');
-    addBuilding('office_small', new THREE.Vector3(5, 0, -15), 7, 'office');
-    addBuilding('office_tower', new THREE.Vector3(15, 0, -5), 10, 'office');
-    addBuilding('office_small', new THREE.Vector3(15, 0, -15), 7, 'office');
+    // Northeast blocks (x>0, z<0): Offices
+    addBuilding('office_tower', 10, -10, 10, 'office');
+    addBuilding('office_small', 30, -10, 7, 'office');
+    addBuilding('office_tower', 10, -30, 10, 'office');
+    addBuilding('office_small', 30, -30, 7, 'office');
 
-    // Southeast quadrant: Commercial / stores (4 blocks)
-    addBuilding('store_corner_shop', new THREE.Vector3(5, 0, 5), 4, 'store');
-    addBuilding('store_market_stall', new THREE.Vector3(5, 0, 15), 3, 'store');
-    addBuilding('store_corner_shop', new THREE.Vector3(15, 0, 5), 4, 'store');
-    addBuilding('store_market_stall', new THREE.Vector3(15, 0, 15), 3, 'store');
+    // Southeast blocks (x>0, z>0): Stores
+    addBuilding('store_corner_shop', 10, 10, 4, 'store');
+    addBuilding('store_market_stall', 30, 10, 3, 'store');
+    addBuilding('store_corner_shop', 10, 30, 4, 'store');
+    addBuilding('store_market_stall', 30, 30, 3, 'store');
 
-    // Southwest quadrant: Community buildings (4 blocks)
-    addBuilding('park_basic', new THREE.Vector3(-5, 0, 5), 999, 'park');
-    addBuilding('party_hall', new THREE.Vector3(-5, 0, 15), 50, 'party_hall');
-    addBuilding('park_basic', new THREE.Vector3(-15, 0, 5), 999, 'park');
-    addBuilding('cleaning_depot', new THREE.Vector3(-15, 0, 15), 2, 'cleaning_depot');
+    // Southwest blocks (x<0, z>0): Community
+    addBuilding('park_basic', -10, 10, 999, 'park');
+    addBuilding('party_hall', -30, 10, 50, 'party_hall');
+    addBuilding('park_basic', -10, 30, 999, 'park');
+    addBuilding('cleaning_depot', -30, 30, 2, 'cleaning_depot');
 
     // Simulation loop with growth system
     const simLoop = new SimulationLoop(stateManager, buildingInstances, 42);
@@ -151,11 +162,11 @@ function App() {
     simLoop.setWorld(world);
     simLoop.start();
 
-    // Spawn initial characters spread across the town
+    // Spawn characters near roads
     for (let i = 0; i < 20; i++) {
       const model = ALL_CHARACTER_MODELS[i % ALL_CHARACTER_MODELS.length];
-      const x = rng.nextInt(-16, 16);
-      const z = rng.nextInt(-16, 16);
+      const x = rng.nextInt(-35, 35);
+      const z = rng.nextInt(-35, 35);
       const terrainY = getTerrainHeight(world, x, z);
       const position = new THREE.Vector3(x, terrainY, z);
       const index = charRenderer.addCharacter(model.id, position);

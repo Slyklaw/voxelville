@@ -21,31 +21,8 @@ export class World {
 
     for (let x = -half; x < half; x++) {
       for (let z = -half; z < half; z++) {
-        // Simple heightmap using seeded noise
-        const nx = x * 0.15;
-        const nz = z * 0.15;
-        // Deterministic noise - no rng.next() inside noise calculation
-        const noise = Math.sin(nx * 2.5) * Math.cos(nz * 2.5);
-        const rawHeight = Math.floor((noise + 1) * 2);
-        const height = Math.max(0, Math.min(4, rawHeight));
-
-        for (let y = 0; y <= height; y++) {
-          let color: string;
-          if (y === 0 && height === 0) {
-            // Deterministic water pattern instead of random
-            color = ((Math.abs(x * 7 + z * 13) % 10) < 1) ? 'water' : 'grass';
-          } else if (y === 0) {
-            color = 'grass';
-          } else if (y <= 1) {
-            color = 'grass';
-          } else if (y === 2) {
-            color = 'dirt';
-          } else {
-            color = 'stone';
-          }
-
-          this.tiles.push({ x, y, z, color });
-        }
+        // Flat terrain at y=0 for development
+        this.tiles.push({ x, y: 0, z, color: 'grass' });
       }
     }
   }
