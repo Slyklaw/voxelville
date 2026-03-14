@@ -28,7 +28,8 @@ const EXPECTED_BUILDING_COLORS: Record<string, number> = {
   'window': 0x272727,     // Dark gray/black
   'door': 0x8B4513,       // Brown
   'awning': 0xE8C547,     // Yellow (same as store)
-  'road': 0xffffff,       // White
+  'road': 0x6b6b6b,       // Gray
+'sidewalk': 0xc0c0c0,   // Light gray
   'grass': 0x7ec850,      // Green
   'water': 0x4a90d9,      // Blue
   'stone': 0x808080,      // Gray

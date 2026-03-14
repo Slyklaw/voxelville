@@ -374,6 +374,16 @@ export const CLEANING_DEPOTS: BuildingModelDefinition[] = [
   },
 ];
 
+// Sidewalk tile - single flat tile
+export const SIDEWALK_TILES: BuildingModelDefinition[] = [
+  {
+    id: 'sidewalk_tile',
+    type: 'road',
+    size: [1, 1, 1],
+    voxels: [{ x: 0, y: 0, z: 0, color: 'sidewalk' }],
+  },
+];
+
 // Combined array of all building models
 export const ALL_BUILDING_MODELS: BuildingModelDefinition[] = [
   ...HOUSE_MODELS,
@@ -383,6 +393,7 @@ export const ALL_BUILDING_MODELS: BuildingModelDefinition[] = [
   ...PARK_TILES,
   ...PARTY_HALLS,
   ...CLEANING_DEPOTS,
+  ...SIDEWALK_TILES,
 ];
 
 // Helper to get a building model by ID

@@ -143,39 +143,62 @@ function App() {
     placeRoadLine(0, -worldEdge, 0, worldEdge);
     placeRoadLine(20, -worldEdge, 20, worldEdge);
 
-    // City blocks in grid cells between roads
-    // Blocks centered at: x = ±10, ±30 and z = ±10, ±30
+    // Place sidewalks (1 tile around each city block)
+    // Blocks are centered at ±10, ±30, each block is 16x16 tiles
+    // Sidewalk forms a rectangle from block_center-7 to block_center+7
+    const blockCenters = [-30, -10, 10, 30];
+    for (const bx of blockCenters) {
+      for (const bz of blockCenters) {
+        const min = 3;   // Block edge (just inside road zone)
+        const max = 17;  // Block edge
+        // Place sidewalk perimeter
+        for (let i = min; i <= max; i++) {
+          // Skip positions that overlap with roads
+          if (bx - 7 + i < -20 || bx - 7 + i > 20) {
+            // West/east edges of block
+            buildingRenderer.addBuilding('sidewalk_tile', new THREE.Vector3(bx - 7, 0, bz - 7 + i));
+            buildingRenderer.addBuilding('sidewalk_tile', new THREE.Vector3(bx + 7, 0, bz - 7 + i));
+          }
+          if (bz - 7 + i < -20 || bz - 7 + i > 20) {
+            // North/south edges of block
+            buildingRenderer.addBuilding('sidewalk_tile', new THREE.Vector3(bx - 7 + i, 0, bz - 7));
+            buildingRenderer.addBuilding('sidewalk_tile', new THREE.Vector3(bx - 7 + i, 0, bz + 7));
+          }
+        }
+      }
+    }
+
+    // City blocks - 1 larger building per block, placed at y=1
     const buildingInstances: BuildingInstance[] = [];
     let bid = 0;
 
     function addBuilding(modelId: string, x: number, z: number, cap: number, type: BuildingType): void {
-      const adjustedPos = new THREE.Vector3(x, 0, z);
-      buildingRenderer.addBuilding(modelId, adjustedPos);
+      buildingRenderer.addBuilding(modelId, new THREE.Vector3(x, 1, z));
       buildingInstances.push({
-        id: bid++, type, position: adjustedPos.clone(),
+        id: bid++, type, position: new THREE.Vector3(x, 1, z),
         capacity: cap, occupancy: 0, modelId,
       });
     }
 
-    // Northwest blocks (x<0, z<0): Residential
-    addBuilding('house_cottage', -10, -10, 4, 'house');
+    // Northwest blocks (x<0, z<0): Large residential houses
+    addBuilding('house_two_storey', -10, -10, 6, 'house');
     addBuilding('house_two_storey', -30, -10, 6, 'house');
     addBuilding('house_row_house', -10, -30, 5, 'house');
-    addBuilding('house_cottage', -30, -30, 4, 'house');
+    addBuilding('house_row_house', -30, -30, 5, 'house');
 
-    // Northeast blocks (x>0, z<0): Offices
+    // Northeast blocks (x>0, z<0): Tall offices
     addBuilding('office_tower', 10, -10, 10, 'office');
-    addBuilding('office_small', 30, -10, 7, 'office');
+    addBuilding('office_tower', 30, -10, 10, 'office');
     addBuilding('office_tower', 10, -30, 10, 'office');
     addBuilding('office_small', 30, -30, 7, 'office');
 
     // Southeast blocks (x>0, z>0): Stores
     addBuilding('store_corner_shop', 10, 10, 4, 'store');
-    addBuilding('store_market_stall', 30, 10, 3, 'store');
-    addBuilding('store_corner_shop', 10, 30, 4, 'store');
+    addBuilding('store_corner_shop', 30, 10, 4, 'store');
+    addBuilding('store_market_stall', 10, 30, 3, 'store');
     addBuilding('store_market_stall', 30, 30, 3, 'store');
 
-    // Southwest blocks (x<0, z>0): Community
+    // Southwest blocks (x<0, z>0): Community buildings
     addBuilding('park_basic', -10, 10, 999, 'park');
     addBuilding('party_hall', -30, 10, 50, 'party_hall');
     addBuilding('park_basic', -10, 30, 999, 'park');
