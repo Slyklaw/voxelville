@@ -40,11 +40,16 @@ export class OutlineRenderer {
   }
 
   /**
-   * Render the outline pass. Call BEFORE rendering the source mesh.
+   * Add outline mesh to scene (for batched rendering).
    */
-  render(renderer: THREE.WebGLRenderer, scene: THREE.Scene, camera: THREE.Camera): void {
+  addToScene(scene: THREE.Scene): void {
     scene.add(this.outlineMesh);
-    renderer.render(scene, camera);
+  }
+
+  /**
+   * Remove outline mesh from scene (after batched rendering).
+   */
+  removeFromScene(scene: THREE.Scene): void {
     scene.remove(this.outlineMesh);
   }
 

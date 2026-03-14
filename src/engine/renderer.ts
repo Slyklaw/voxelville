@@ -27,6 +27,7 @@ export function createOutlineFor(mesh: THREE.InstancedMesh): MeshWithOutline {
 
 /**
  * Two-pass render: outlines first, then main meshes.
+ * Outlines are batched into a single render pass.
  * @param ctx - Renderer context
  * @param pairs - Array of mesh+outline pairs to render
  * @param updateCamera - Optional camera update callback
@@ -38,13 +39,25 @@ export function renderWithOutlines(
 ): void {
   if (updateCamera) updateCamera();
 
-  // Pass 1: Render outlines (black back-face silhouette)
+  // Update all outline matrices first
   for (const pair of pairs) {
     pair.outline.update(pair.mesh);
-    pair.outline.render(ctx.renderer, ctx.scene, ctx.camera);
   }
 
-  // Pass 2: Render main meshes on top
+  // Add all outline meshes to scene at once
+  for (const pair of pairs) {
+    pair.outline.addToScene(ctx.scene);
+  }
+
+  // Pass 1: Single render for all outlines
+  ctx.renderer.render(ctx.scene, ctx.camera);
+
+  // Remove all outline meshes from scene
+  for (const pair of pairs) {
+    pair.outline.removeFromScene(ctx.scene);
+  }
+
+  // Pass 2: Render main meshes
   ctx.renderer.render(ctx.scene, ctx.camera);
 }
 
