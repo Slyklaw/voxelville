@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import * as THREE from 'three';
-import { World, createWorld, getTerrainHeight, getTile, TileData } from '../src/simulation/world';
+import { World, createWorld, getTerrainHeight, getMaxTerrainHeightInArea, getTile, TileData } from '../src/simulation/world';
 import { ALL_BUILDING_MODELS, BuildingModelDefinition } from '../src/models/buildings';
 import { ALL_CHARACTER_MODELS, CharacterModelDefinition } from '../src/models/characters';
 
@@ -249,22 +249,22 @@ describe('Building Positioning on Terrain (VIZ-16, VIZ-17)', () => {
   it('should position character on terrain surface', () => {
     const maleModel = ALL_CHARACTER_MODELS.find(m => m.id === 'male_1');
     if (!maleModel) throw new Error('male_1 not found');
-    
+
     console.log(`\n=== Character Positioning ===`);
-    
+
     const charX = 0;
     const charZ = 0;
     const terrainHeight = getTerrainHeight(world, charX, charZ);
     const charY = terrainHeight; // Characters stand on terrain
-    
+
     console.log(`Character position: (${charX}, ${charY}, ${charZ})`);
     console.log(`Terrain height: ${terrainHeight}`);
     console.log(`Min voxel Y (feet): ${getMinModelHeight(maleModel)}`);
     console.log(`Max voxel Y (head): ${getMaxModelHeight(maleModel)}`);
-    
+
     // Character's feet (y=0 voxel) should be at terrain height
     expect(charY).toBe(terrainHeight);
-    
+
     // Character's head should be at terrainHeight + 3
     const basePosition = new THREE.Vector3(charX, charY, charZ);
     const headVoxel = maleModel.voxels.find(v => v.y === 3);
@@ -273,5 +273,61 @@ describe('Building Positioning on Terrain (VIZ-16, VIZ-17)', () => {
       console.log(`Head world Y: ${headWorldPos.y} (terrain + 3)`);
       expect(headWorldPos.y).toBe(terrainHeight + 3);
     }
+  });
+
+  it('should position all building voxels above terrain across footprint', () => {
+    const houseModel = ALL_BUILDING_MODELS.find(m => m.id === 'house_cottage');
+    if (!houseModel) throw new Error('house_cottage not found');
+
+    console.log(`\n=== Building Positioning with Max Terrain Height ===`);
+
+    // Calculate footprint dimensions from model voxels
+    const maxX = Math.max(...houseModel.voxels.map(v => v.x));
+    const maxZ = Math.max(...houseModel.voxels.map(v => v.z));
+    const footprintWidth = maxX + 1;
+    const footprintDepth = maxZ + 1;
+
+    const buildingX = 0;
+    const buildingZ = 0;
+
+    // Get max terrain height across the entire building footprint
+    const maxTerrainHeight = getMaxTerrainHeightInArea(
+      world, buildingX, buildingZ, footprintWidth, footprintDepth
+    );
+
+    // Place building at max terrain height (not just center position)
+    const buildingY = maxTerrainHeight;
+
+    console.log(`Building: ${houseModel.id}`);
+    console.log(`Position: (${buildingX}, ${buildingY}, ${buildingZ})`);
+    console.log(`Footprint: ${footprintWidth}x${footprintDepth}`);
+    console.log(`Max terrain height across footprint: ${maxTerrainHeight}`);
+
+    // Verify ALL voxels are above or at their local terrain height
+    const basePosition = new THREE.Vector3(buildingX, buildingY, buildingZ);
+    let allAboveTerrain = true;
+    let belowCount = 0;
+
+    houseModel.voxels.forEach((voxel, i) => {
+      const worldPos = getVoxelWorldPosition(basePosition, voxel);
+      const voxelTerrainY = getTerrainHeight(world, Math.round(worldPos.x), Math.round(worldPos.z));
+      const aboveTerrain = worldPos.y >= voxelTerrainY;
+
+      if (!aboveTerrain) {
+        allAboveTerrain = false;
+        belowCount++;
+      }
+
+      if (i < 10 || !aboveTerrain) {
+        console.log(`  [${i}] world(${worldPos.x.toFixed(1)},${worldPos.y.toFixed(1)},${worldPos.z.toFixed(1)}) terrainY=${voxelTerrainY} ${aboveTerrain ? '✓' : '✗ BELOW TERRAIN'}`);
+      }
+    });
+
+    console.log(`Total voxels: ${houseModel.voxels.length}`);
+    console.log(`Voxels below terrain: ${belowCount}`);
+
+    // All building voxels must be at or above their local terrain height
+    expect(allAboveTerrain).toBe(true);
+    expect(belowCount).toBe(0);
   });
 });

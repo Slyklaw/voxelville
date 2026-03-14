@@ -102,3 +102,30 @@ export function getTerrainHeight(world: World, x: number, z: number): number {
 
   return maxHeight;
 }
+
+/**
+ * Get the maximum terrain height across a rectangular area.
+ * Iterates all tiles in the World and returns the highest tile.y
+ * found within the bounds [x, x + width) × [z, z + depth).
+ * Returns 0 if no tiles exist in the area.
+ */
+export function getMaxTerrainHeightInArea(
+  world: World,
+  x: number,
+  z: number,
+  width: number,
+  depth: number,
+): number {
+  const tiles = world.getTiles();
+  let maxHeight = 0;
+
+  for (const tile of tiles) {
+    if (tile.x >= x && tile.x < x + width && tile.z >= z && tile.z < z + depth) {
+      if (tile.y > maxHeight) {
+        maxHeight = tile.y;
+      }
+    }
+  }
+
+  return maxHeight;
+}
