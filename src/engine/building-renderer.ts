@@ -5,7 +5,7 @@ import { getVoxelGeometry } from './voxel-mesh';
 import { ALL_BUILDING_MODELS } from '../models/buildings';
 
 // Maximum number of instances per building type
-const MAX_INSTANCES_PER_BUILDING = 1000;
+const MAX_INSTANCES_PER_BUILDING = 2000;
 
 /**
  * Convert a material name to THREE.Color for per-instance coloring
