@@ -10,7 +10,7 @@ function initMaterials(): void {
   if (MATERIALS.size > 0) return;
   MATERIALS.set('sky', createMaterial(0x87ceeb));
   MATERIALS.set('grass', createMaterial(0x7ec850));
-  MATERIALS.set('road', createMaterial(0x6b6b6b));
+  MATERIALS.set('road', createMaterial(0xffffff));
   MATERIALS.set('brick', createMaterial(0xc85a3a));
   MATERIALS.set('roof', createMaterial(0x4a6fa5));
   MATERIALS.set('office', createMaterial(0x9bb8d3));
