@@ -5,16 +5,16 @@
 See: .planning/PROJECT.md (updated 2026-03-11)
 
 **Core value:** A city that lives without you — watching citizens make autonomous decisions, parties erupting, the city growing, all without player micromanagement.
-**Current focus:** v1.2 complete — Gap closure for building positioning bug
+**Current focus:** v1.2 complete — All gaps closed, awaiting next milestone
 
 ## Current Position
 
 Phase: 10 (complete)
 Plan: —
-Status: Phase 10 complete, 1 gap identified for gap-closure
-Last activity: 2026-03-13 — Phase 10 verification complete
+Status: Phase 10 complete, gap closure complete (10-02)
+Last activity: 2026-03-13 — Building positioning bug fixed
 
-Progress: ██████████ (v1.2: 1/1 phases complete)
+Progress: ██████████ (v1.2: 1/1 phases complete, 2/2 plans complete)
 
 ## Performance Metrics
 

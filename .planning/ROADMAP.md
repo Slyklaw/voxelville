@@ -195,4 +195,4 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6
 
 Plans:
 - [x] 10-01-PLAN.md — Write comprehensive test suite for models, materials, renderers, and positioning
-- [ ] 10-02-PLAN.md — Fix building positioning bug (voxels below terrain)
+- [x] 10-02-PLAN.md — Fix building positioning bug (voxels below terrain)
