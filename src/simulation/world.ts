@@ -31,6 +31,14 @@ export class World {
     return this.tiles;
   }
 
+  /**
+   * Remove tiles where a predicate returns true.
+   * Used to clear grass where roads will be placed.
+   */
+  removeTilesWhere(predicate: (tile: TileData) => boolean): void {
+    this.tiles = this.tiles.filter(t => !predicate(t));
+  }
+
   get sizeValue(): number {
     return this.size;
   }

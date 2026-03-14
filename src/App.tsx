@@ -28,9 +28,49 @@ function App() {
     const orbitCamera = new OrbitCamera(ctx.camera, canvas);
     canvas.style.cursor = 'grab';
 
-    // Generate terrain (large world with lots of empty space around town)
+    // Generate flat terrain
     const world = createWorld(80);
     world.generate(42);
+
+    // Road positions (3-wide roads at z=-20,0,20 and x=-20,0,20)
+    const roadPositions = new Set<string>();
+    const worldEdge = 39;
+
+    // Collect all road positions and remove grass there
+    function addRoadPositions(x1: number, z1: number, x2: number, z2: number): void {
+      if (x1 === x2) {
+        const minZ = Math.min(z1, z2);
+        const maxZ = Math.max(z1, z2);
+        for (let z = minZ; z <= maxZ; z++) {
+          for (let dx = -1; dx <= 1; dx++) {
+            roadPositions.add(`${x1 + dx},${z}`);
+          }
+        }
+      } else {
+        const minX = Math.min(x1, x2);
+        const maxX = Math.max(x1, x2);
+        for (let x = minX; x <= maxX; x++) {
+          for (let dz = -1; dz <= 1; dz++) {
+            roadPositions.add(`${x},${z1 + dz}`);
+          }
+        }
+      }
+    }
+
+    // Define road grid
+    addRoadPositions(-worldEdge, -20, worldEdge, -20);
+    addRoadPositions(-worldEdge, 0, worldEdge, 0);
+    addRoadPositions(-worldEdge, 20, worldEdge, 20);
+    addRoadPositions(-20, -worldEdge, -20, worldEdge);
+    addRoadPositions(0, -worldEdge, 0, worldEdge);
+    addRoadPositions(20, -worldEdge, 20, worldEdge);
+
+    // Remove grass tiles where roads will go
+    world.removeTilesWhere(t => {
+      const key = `${t.x},${t.z}`;
+      return roadPositions.has(key);
+    });
+
     const tiles = world.getTiles();
     const colorCounts = new Map<string, number>();
     for (const tile of tiles) {
@@ -72,48 +112,36 @@ function App() {
     const buildingRenderer = new BuildingRenderer(ctx.scene);
     const roadGrid = new RoadGrid();
 
-    // Build road grid - 3-wide roads to world edges
-    // World is 80x80, coordinates -40 to +39
-    const worldEdge = 39;
-
-    // Helper to place a 3-wide road segment
+    // Helper to place a 3-wide road segment at y=0
     function placeRoadLine(x1: number, z1: number, x2: number, z2: number): void {
       if (x1 === x2) {
-        // Vertical line (varying z)
         const minZ = Math.min(z1, z2);
         const maxZ = Math.max(z1, z2);
         for (let z = minZ; z <= maxZ; z++) {
           for (let dx = -1; dx <= 1; dx++) {
             roadGrid.placeRoad(x1 + dx, z);
-            buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x1 + dx, 1, z));
+            buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x1 + dx, 0, z));
           }
         }
       } else {
-        // Horizontal line (varying x)
         const minX = Math.min(x1, x2);
         const maxX = Math.max(x1, x2);
         for (let x = minX; x <= maxX; x++) {
           for (let dz = -1; dz <= 1; dz++) {
             roadGrid.placeRoad(x, z1 + dz);
-            buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, 1, z1 + dz));
+            buildingRenderer.addBuilding('road_tile', new THREE.Vector3(x, 0, z1 + dz));
           }
         }
       }
     }
 
-    // Horizontal roads (east-west) at z = -20, 0, 20
+    // Place roads at y=0 (grass already removed)
     placeRoadLine(-worldEdge, -20, worldEdge, -20);
     placeRoadLine(-worldEdge, 0, worldEdge, 0);
     placeRoadLine(-worldEdge, 20, worldEdge, 20);
-
-    // Vertical roads (north-south) at x = -20, 0, 20
-    // Skip center segments already covered by horizontal roads
-    placeRoadLine(-20, -worldEdge, -20, -21);
-    placeRoadLine(-20, 21, -20, worldEdge);
-    placeRoadLine(0, -worldEdge, 0, -21);
-    placeRoadLine(0, 21, 0, worldEdge);
-    placeRoadLine(20, -worldEdge, 20, -21);
-    placeRoadLine(20, 21, 20, worldEdge);
+    placeRoadLine(-20, -worldEdge, -20, worldEdge);
+    placeRoadLine(0, -worldEdge, 0, worldEdge);
+    placeRoadLine(20, -worldEdge, 20, worldEdge);
 
     // City blocks in grid cells between roads
     // Blocks centered at: x = ±10, ±30 and z = ±10, ±30
@@ -121,7 +149,7 @@ function App() {
     let bid = 0;
 
     function addBuilding(modelId: string, x: number, z: number, cap: number, type: BuildingType): void {
-      const adjustedPos = new THREE.Vector3(x, 1, z);
+      const adjustedPos = new THREE.Vector3(x, 0, z);
       buildingRenderer.addBuilding(modelId, adjustedPos);
       buildingInstances.push({
         id: bid++, type, position: adjustedPos.clone(),
