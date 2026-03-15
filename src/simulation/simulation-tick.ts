@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { CharacterStateManager } from './character-state';
 import { decayNeeds } from './needs-system';
-import { selectTask, getAvailableTasks, computeUtility } from './ai-system';
+import { selectTask, getAvailableTasks } from './ai-system';
 import { SeededRNG } from '../utils/rng';
 import { MovementSystem } from './movement-system';
 import { uiState } from '../ui/ui-state';
@@ -164,13 +164,13 @@ export class SimulationLoop {
           sim.currentPath = null;
           sim.pathIndex = 0;
 
-          // Debug log task selection
-          if (this.debugEnabled && this.tickCount % 5 === 0) {
-            const utility = computeUtility(selectedTask, sim);
-            console.log(
-              `Char ${entityId}: Selected ${selectedTask.type} (utility: ${utility.toFixed(3)})`,
-            );
-          }
+          // Debug log task selection (verbose - disabled by default)
+          // if (this.debugEnabled && this.tickCount % 5 === 0) {
+          //   const utility = computeUtility(selectedTask, sim);
+          //   console.log(
+          //     `Char ${entityId}: Selected ${selectedTask.type} (utility: ${utility.toFixed(3)})`,
+          //   );
+          // }
         }
       }
     }
