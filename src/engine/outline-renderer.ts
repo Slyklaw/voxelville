@@ -24,10 +24,11 @@ export class OutlineRenderer {
    * Copy instance matrices from source mesh and scale for outline effect.
    * For static meshes, only updates once then skips subsequent calls.
    * @param sourceMesh - The InstancedMesh to generate outlines for
+   * @returns true if update was performed (dynamic), false if skipped (static)
    */
-  update(sourceMesh: THREE.InstancedMesh): void {
+  update(sourceMesh: THREE.InstancedMesh): boolean {
     // Skip update for static outlines after first initialization
-    if (this.isStatic && this.hasInitialized) return;
+    if (this.isStatic && this.hasInitialized) return false;
 
     const dummy = new THREE.Object3D();
 
@@ -44,6 +45,14 @@ export class OutlineRenderer {
     this.outlineMesh.count = sourceMesh.count;
     this.outlineMesh.instanceMatrix.needsUpdate = true;
     this.hasInitialized = true;
+    return true;
+  }
+
+  /**
+   * Get the instance count of the outline mesh.
+   */
+  get instanceCount(): number {
+    return this.outlineMesh.count;
   }
 
   /**

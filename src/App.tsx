@@ -237,12 +237,20 @@ function App() {
     // Add all outline meshes to scene once (hidden by default)
     initOutlines(ctx, outlinePairs);
 
-    // Render loop (using setTimeout to bypass vsync for accurate FPS measurement)
+    // Render loop with performance logging
     let running = true;
+    let frameCount = 0;
+    let lastLogTime = performance.now();
+    const timings: Record<string, number> = {};
+
     function animate(): void {
       if (!running) return;
       setTimeout(animate, 0);
 
+      const frameStart = performance.now();
+
+      // Character updates
+      const charStart = performance.now();
       for (const entityId of stateManager.getAllEntityIds()) {
         const renderState = stateManager.getRenderState(entityId);
         const sim = stateManager.getCharacter(entityId);
@@ -253,8 +261,30 @@ function App() {
           renderState,
         );
       }
+      timings['charUpdate'] = (timings['charUpdate'] || 0) + performance.now() - charStart;
 
+      // Render with outlines
+      const renderStart = performance.now();
       renderWithOutlines(ctx, outlinePairs);
+      timings['render'] = (timings['render'] || 0) + performance.now() - renderStart;
+
+      timings['total'] = (timings['total'] || 0) + performance.now() - frameStart;
+
+      // Log every 60 frames
+      frameCount++;
+      const now = performance.now();
+      if (now - lastLogTime > 2000) {
+        const avg = (key: string) => (timings[key] / frameCount).toFixed(2);
+        console.log(`[PERF] Frames: ${frameCount}, Avg ms/frame:`);
+        console.log(`  Total: ${avg('total')}ms`);
+        console.log(`  CharUpdate: ${avg('charUpdate')}ms`);
+        console.log(`  Render: ${avg('render')}ms`);
+        console.log(`  Outline pairs: ${outlinePairs.length}`);
+        console.log(`  Characters: ${stateManager.getAllEntityIds().length}`);
+        Object.keys(timings).forEach(k => timings[k] = 0);
+        frameCount = 0;
+        lastLogTime = now;
+      }
     }
     animate();
 

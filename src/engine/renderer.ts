@@ -56,9 +56,12 @@ export function renderWithOutlines(
   if (updateCamera) updateCamera();
 
   // Update all outline matrices (static ones skip after first frame)
+  const updateStart = performance.now();
+  let dynamicCount = 0;
   for (const pair of pairs) {
-    pair.outline.update(pair.mesh);
+    if (pair.outline.update(pair.mesh)) dynamicCount++;
   }
+  const updateMs = performance.now() - updateStart;
 
   // Show all outlines for pass 1
   for (const pair of pairs) {
@@ -66,7 +69,9 @@ export function renderWithOutlines(
   }
 
   // Pass 1: Render outlines
+  const outlineRenderStart = performance.now();
   ctx.renderer.render(ctx.scene, ctx.camera);
+  const outlineRenderMs = performance.now() - outlineRenderStart;
 
   // Hide all outlines
   for (const pair of pairs) {
@@ -74,7 +79,15 @@ export function renderWithOutlines(
   }
 
   // Pass 2: Render main meshes
+  const mainRenderStart = performance.now();
   ctx.renderer.render(ctx.scene, ctx.camera);
+  const mainRenderMs = performance.now() - mainRenderStart;
+
+  // Log slow frames
+  const totalMs = updateMs + outlineRenderMs + mainRenderMs;
+  if (totalMs > 16) {
+    console.log(`[RENDER SLOW] ${totalMs.toFixed(1)}ms: update=${updateMs.toFixed(1)}ms(${dynamicCount} dynamic), outline=${outlineRenderMs.toFixed(1)}ms, main=${mainRenderMs.toFixed(1)}ms`);
+  }
 }
 
 export function initRenderer(canvas: HTMLCanvasElement): RendererContext {
