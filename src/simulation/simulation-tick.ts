@@ -136,6 +136,7 @@ export class SimulationLoop {
    */
   private tick(): void {
     this.tickCount++;
+    const tickStart = performance.now();
 
     // Performance logging every 20 ticks
     if (this.tickCount % 20 === 0) {
@@ -143,7 +144,8 @@ export class SimulationLoop {
     }
 
     // 1. Decay needs for all characters
-    for (const entityId of this.stateManager.getAllEntityIds()) {
+    const charIds = this.stateManager.getAllEntityIds();
+    for (const entityId of charIds) {
       const sim = this.stateManager.getCharacter(entityId);
       if (!sim) continue;
 
@@ -233,6 +235,12 @@ export class SimulationLoop {
         }
       }
       console.groupEnd();
+    }
+
+    // Log slow ticks
+    const tickMs = performance.now() - tickStart;
+    if (tickMs > 10) {
+      console.log(`[SIM SLOW] Tick ${this.tickCount} took ${tickMs.toFixed(1)}ms, chars=${charIds.length}`);
     }
   }
 

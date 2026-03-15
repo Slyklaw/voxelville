@@ -123,6 +123,13 @@ export class Pathfinder {
   }
 
   /**
+   * Get cache size for debugging
+   */
+  get cacheSize(): number {
+    return this.pathCache.size;
+  }
+
+  /**
    * A* pathfinding with time-slicing
    * Limited to maxIterationsPerTick to avoid blocking
    */

@@ -21,6 +21,12 @@ export class MovementSystem {
    * Moves characters one step along their current path
    */
   update(): void {
+    // Log path cache size every 20 ticks
+    const cacheSize = this.pathfinder.cacheSize;
+    if (cacheSize > 0 && cacheSize % 50 === 0) {
+      console.log(`[PATH] Cache size: ${cacheSize}`);
+    }
+
     for (const entityId of this.stateManager.getAllEntityIds()) {
       const sim = this.stateManager.getCharacter(entityId);
       if (!sim) continue;
