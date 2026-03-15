@@ -235,7 +235,11 @@ function App() {
     }
 
     // Add all outline meshes to scene once (hidden by default)
-    initOutlines(ctx, outlinePairs);
+    // Set to true to enable outlines (performance hit!)
+    const ENABLE_OUTLINES = false;
+    if (ENABLE_OUTLINES) {
+      initOutlines(ctx, outlinePairs);
+    }
 
     // Render loop with performance logging
     let running = true;
@@ -263,9 +267,13 @@ function App() {
       }
       timings['charUpdate'] = (timings['charUpdate'] || 0) + performance.now() - charStart;
 
-      // Render with outlines
+      // Render
       const renderStart = performance.now();
-      renderWithOutlines(ctx, outlinePairs);
+      if (ENABLE_OUTLINES) {
+        renderWithOutlines(ctx, outlinePairs);
+      } else {
+        ctx.renderer.render(ctx.scene, ctx.camera);
+      }
       timings['render'] = (timings['render'] || 0) + performance.now() - renderStart;
 
       timings['total'] = (timings['total'] || 0) + performance.now() - frameStart;
