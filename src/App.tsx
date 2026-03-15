@@ -248,7 +248,7 @@ function App() {
       initOutlines(ctx, outlinePairs);
     }
 
-    // Render loop with performance logging
+    // Render loop using requestAnimationFrame (browser-optimized, no throttling)
     let running = true;
     let frameCount = 0;
     let lastLogTime = performance.now();
@@ -258,7 +258,7 @@ function App() {
 
     function animate(): void {
       if (!running) return;
-      setTimeout(animate, 0);
+      requestAnimationFrame(animate);
 
       const now = performance.now();
       const frameInterval = now - lastFrameTime;
