@@ -39,6 +39,13 @@ export class World {
     this.tiles = this.tiles.filter(t => !predicate(t));
   }
 
+  /**
+   * Add a tile to the world.
+   */
+  addTile(tile: TileData): void {
+    this.tiles.push(tile);
+  }
+
   get sizeValue(): number {
     return this.size;
   }

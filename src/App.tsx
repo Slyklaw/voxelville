@@ -71,6 +71,31 @@ function App() {
       return roadPositions.has(key);
     });
 
+    // Generate sidewalks as terrain tiles (replace grass with sidewalk)
+    const blockCenters = [-30, -10, 10, 30];
+    for (const bx of blockCenters) {
+      for (const bz of blockCenters) {
+        // Sidewalk perimeter around each block
+        const min = 3;   // Block edge (just inside road zone)
+        const max = 17;  // Block edge
+        for (let i = min; i <= max; i++) {
+          const x1 = bx - 7 + i;
+          const z1 = bz - 7 + i;
+          // West/east edges of block (skip if in road zone)
+          if (x1 < -20 || x1 > 20) {
+            world.addTile({ x: bx - 7, y: 0, z: z1, color: 'sidewalk' });
+            world.addTile({ x: bx + 7, y: 0, z: z1, color: 'sidewalk' });
+          }
+          // North/south edges of block (skip if in road zone)
+          if (z1 < -20 || z1 > 20) {
+            world.addTile({ x: x1, y: 0, z: bz - 7, color: 'sidewalk' });
+            world.addTile({ x: x1, y: 0, z: bz + 7, color: 'sidewalk' });
+          }
+        }
+      }
+    }
+
+    // Now count terrain tiles and create pools
     const tiles = world.getTiles();
     const colorCounts = new Map<string, number>();
     for (const tile of tiles) {
@@ -142,31 +167,6 @@ function App() {
     placeRoadLine(-20, -worldEdge, -20, worldEdge);
     placeRoadLine(0, -worldEdge, 0, worldEdge);
     placeRoadLine(20, -worldEdge, 20, worldEdge);
-
-    // Place sidewalks (1 tile around each city block)
-    // Blocks are centered at ±10, ±30, each block is 16x16 tiles
-    // Sidewalk forms a rectangle from block_center-7 to block_center+7
-    const blockCenters = [-30, -10, 10, 30];
-    for (const bx of blockCenters) {
-      for (const bz of blockCenters) {
-        const min = 3;   // Block edge (just inside road zone)
-        const max = 17;  // Block edge
-        // Place sidewalk perimeter
-        for (let i = min; i <= max; i++) {
-          // Skip positions that overlap with roads
-          if (bx - 7 + i < -20 || bx - 7 + i > 20) {
-            // West/east edges of block
-            buildingRenderer.addBuilding('sidewalk_tile', new THREE.Vector3(bx - 7, 0, bz - 7 + i));
-            buildingRenderer.addBuilding('sidewalk_tile', new THREE.Vector3(bx + 7, 0, bz - 7 + i));
-          }
-          if (bz - 7 + i < -20 || bz - 7 + i > 20) {
-            // North/south edges of block
-            buildingRenderer.addBuilding('sidewalk_tile', new THREE.Vector3(bx - 7 + i, 0, bz - 7));
-            buildingRenderer.addBuilding('sidewalk_tile', new THREE.Vector3(bx - 7 + i, 0, bz + 7));
-          }
-        }
-      }
-    }
 
     // City blocks - 1 larger building per block, placed at y=1
     const buildingInstances: BuildingInstance[] = [];

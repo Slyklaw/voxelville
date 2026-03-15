@@ -39,12 +39,12 @@ function countByColor(model: BuildingModelDefinition | CharacterModelDefinition)
 
 describe('Building Model Definitions (VIZ-01, VIZ-03, VIZ-04)', () => {
   describe('Building counts', () => {
-    it('should have 12 total building models', () => {
+    it('should have 11 total building models', () => {
       console.log('\n=== VIZ-01: Building Model Count ===');
       console.log(`Total building models: ${ALL_BUILDING_MODELS.length}`);
-      console.log(`Expected: 12`);
-      console.log(`Breakdown: ${HOUSE_MODELS.length} houses, ${OFFICE_MODELS.length} offices, ${STORE_MODELS.length} stores, ${ROAD_TILES.length} roads, ${PARK_TILES.length} parks, ${PARTY_HALLS.length} party halls, ${CLEANING_DEPOTS.length} depots, 1 sidewalk`);
-      expect(ALL_BUILDING_MODELS.length).toBe(12);
+      console.log(`Expected: 11`);
+      console.log(`Breakdown: ${HOUSE_MODELS.length} houses, ${OFFICE_MODELS.length} offices, ${STORE_MODELS.length} stores, ${ROAD_TILES.length} roads, ${PARK_TILES.length} parks, ${PARTY_HALLS.length} party halls, ${CLEANING_DEPOTS.length} depots`);
+      expect(ALL_BUILDING_MODELS.length).toBe(11);
     });
 
     it('should have 3 house variants', () => {
