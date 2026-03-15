@@ -252,13 +252,21 @@ function App() {
     let running = true;
     let frameCount = 0;
     let lastLogTime = performance.now();
+    let lastFrameTime = performance.now();
     const timings: Record<string, number> = {};
+    const frameIntervals: number[] = [];
 
     function animate(): void {
       if (!running) return;
       setTimeout(animate, 0);
 
-      const frameStart = performance.now();
+      const now = performance.now();
+      const frameInterval = now - lastFrameTime;
+      lastFrameTime = now;
+      frameIntervals.push(frameInterval);
+      if (frameIntervals.length > 60) frameIntervals.shift();
+
+      const frameStart = now;
 
       // Character updates
       const charStart = performance.now();
@@ -285,20 +293,25 @@ function App() {
 
       timings['total'] = (timings['total'] || 0) + performance.now() - frameStart;
 
-      // Log every 60 frames
+      // Log every 2 seconds
       frameCount++;
-      const now = performance.now();
-      if (now - lastLogTime > 2000) {
+      const currentTime = performance.now();
+      if (currentTime - lastLogTime > 2000) {
         const avg = (key: string) => (timings[key] / frameCount).toFixed(2);
-        console.log(`[PERF] Frames: ${frameCount}, Avg ms/frame:`);
-        console.log(`  Total: ${avg('total')}ms`);
-        console.log(`  CharUpdate: ${avg('charUpdate')}ms`);
-        console.log(`  Render: ${avg('render')}ms`);
-        console.log(`  Outline pairs: ${outlinePairs.length}`);
-        console.log(`  Characters: ${stateManager.getAllEntityIds().length}`);
+        
+        // Calculate frame interval stats
+        const avgInterval = (frameIntervals.reduce((a, b) => a + b, 0) / frameIntervals.length).toFixed(1);
+        const minInterval = Math.min(...frameIntervals).toFixed(1);
+        const maxInterval = Math.max(...frameIntervals).toFixed(1);
+        const elapsedSec = ((currentTime - lastLogTime) / 1000).toFixed(1);
+        
+        console.log(`[PERF] ${elapsedSec}s elapsed, Frames: ${frameCount}, Intervals: avg=${avgInterval}ms min=${minInterval}ms max=${maxInterval}ms`);
+        console.log(`  Total: ${avg('total')}ms, CharUpdate: ${avg('charUpdate')}ms, Render: ${avg('render')}ms`);
+        
         Object.keys(timings).forEach(k => timings[k] = 0);
         frameCount = 0;
-        lastLogTime = now;
+        lastLogTime = currentTime;
+        frameIntervals.length = 0;
       }
     }
     animate();
