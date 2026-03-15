@@ -137,6 +137,11 @@ export class SimulationLoop {
   private tick(): void {
     this.tickCount++;
 
+    // Performance logging every 20 ticks
+    if (this.tickCount % 20 === 0) {
+      console.log(`[SIM] Tick ${this.tickCount}: buildings=${this.buildings.length}, characters=${this.stateManager.characterCount}`);
+    }
+
     // 1. Decay needs for all characters
     for (const entityId of this.stateManager.getAllEntityIds()) {
       const sim = this.stateManager.getCharacter(entityId);

@@ -217,6 +217,7 @@ function App() {
     simLoop.setRoadGrid(roadGrid);
     simLoop.setBuildingRenderer(buildingRenderer);
     simLoop.setWorld(world);
+    simLoop.enableDebug(); // Enable logging to track growth
     simLoop.start();
 
     // Spawn characters near roads
