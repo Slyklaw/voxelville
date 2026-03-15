@@ -122,6 +122,12 @@ function App() {
       ctx.scene.add(pool.meshInstance);
     }
 
+    // Log pool info for debugging
+    console.log(`[POOLS] Terrain colors: ${colorCounts.size}, Total terrain tiles: ${tiles.length}`);
+    colorCounts.forEach((count, color) => {
+      console.log(`  ${color}: ${count} tiles`);
+    });
+
     // Create outline pairs for terrain pools (static - never moves)
     const outlinePairs: MeshWithOutline[] = [];
     for (const pool of pools.values()) {
