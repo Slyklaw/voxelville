@@ -56,6 +56,22 @@ export class InstancedPool {
     return index;
   }
 
+  /**
+   * Update the bounding sphere for frustum culling.
+   * Call this after all instances have been added.
+   */
+  updateBoundingSphere(): void {
+    this.mesh.computeBoundingSphere();
+  }
+
+  /**
+   * Disable frustum culling for this mesh.
+   * Use for objects that are always visible (like terrain).
+   */
+  disableFrustumCulling(): void {
+    this.mesh.frustumCulled = false;
+  }
+
   updateInstance(index: number, position: THREE.Vector3, scale?: THREE.Vector3, rotation?: THREE.Euler): void {
     dummy.position.copy(position);
     if (scale) {

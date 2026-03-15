@@ -143,4 +143,24 @@ export class BuildingRenderer {
   getMeshes(): THREE.InstancedMesh[] {
     return Array.from(this.pools.values()).map(pool => pool.meshInstance);
   }
+
+  /**
+   * Update bounding spheres for all pools (for frustum culling).
+   * Call after all buildings have been added.
+   */
+  updateBoundingSpheres(): void {
+    for (const pool of this.pools.values()) {
+      pool.updateBoundingSphere();
+    }
+  }
+
+  /**
+   * Disable frustum culling for all pools.
+   * Use for objects that should always render.
+   */
+  disableFrustumCulling(): void {
+    for (const pool of this.pools.values()) {
+      pool.disableFrustumCulling();
+    }
+  }
 }

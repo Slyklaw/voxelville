@@ -13,6 +13,7 @@ import { createWorld, getTerrainHeight } from './simulation/world';
 import { SimulationLoop, BuildingInstance } from './simulation/simulation-tick';
 import { MovementSystem } from './simulation/movement-system';
 import { ALL_CHARACTER_MODELS } from './models/characters';
+import { ALL_BUILDING_MODELS } from './models/buildings';
 import { SeededRNG } from './utils/rng';
 import { Slider } from './ui/Slider';
 import { Hud } from './ui/Hud';
@@ -118,7 +119,10 @@ function App() {
       pool.addInstance(new THREE.Vector3(tile.x, tile.y, tile.z));
     }
 
+    // Update bounding spheres for frustum culling (call after all instances added)
     for (const pool of pools.values()) {
+      pool.updateBoundingSphere();
+      pool.disableFrustumCulling(); // Terrain is always visible, don't cull
       ctx.scene.add(pool.meshInstance);
     }
 
@@ -127,6 +131,30 @@ function App() {
     colorCounts.forEach((count, color) => {
       console.log(`  ${color}: ${count} tiles`);
     });
+    
+    // Log rendering resolution for debugging
+    const dpr = ctx.renderer.getPixelRatio();
+    const width = window.innerWidth * dpr;
+    const height = window.innerHeight * dpr;
+    console.log(`[RENDERING] Resolution: ${width.toFixed(0)}x${height.toFixed(0)}, DPR: ${dpr.toFixed(1)}, Canvas: ${window.innerWidth}x${window.innerHeight}`);
+
+    // Track total instances for logging
+    const totalTerrainInstances = tiles.length;
+    let totalBuildingInstances = 0;
+    let totalCharacterInstances = 0;
+    const buildingModelCounts = new Map<string, number>();
+    const characterModelCounts = new Map<string, number>();
+    
+    // Compute bounding box of terrain for logging
+    let minX = Infinity, maxX = -Infinity;
+    let minZ = Infinity, maxZ = -Infinity;
+    for (const tile of tiles) {
+      if (tile.x < minX) minX = tile.x;
+      if (tile.x > maxX) maxX = tile.x;
+      if (tile.z < minZ) minZ = tile.z;
+      if (tile.z > maxZ) maxZ = tile.z;
+    }
+    console.log(`[SCENE BOUNDS] Terrain X: ${minX} to ${maxX}, Z: ${minZ} to ${maxZ}`);
 
     // Create outline pairs for terrain pools (static - never moves)
     const outlinePairs: MeshWithOutline[] = [];
@@ -184,6 +212,14 @@ function App() {
         id: bid++, type, position: new THREE.Vector3(x, 1, z),
         capacity: cap, occupancy: 0, modelId,
       });
+      
+      // Track building instance counts
+      buildingModelCounts.set(modelId, (buildingModelCounts.get(modelId) || 0) + 1);
+      // Each building has multiple voxels - need to count total voxels
+      const model = ALL_BUILDING_MODELS.find(m => m.id === modelId);
+      if (model) {
+        totalBuildingInstances += model.voxels.length;
+      }
     }
 
     // Northwest blocks (x<0, z<0): Large residential houses
@@ -209,6 +245,12 @@ function App() {
     addBuilding('party_hall', -30, 10, 50, 'party_hall');
     addBuilding('park_basic', -10, 30, 999, 'park');
     addBuilding('cleaning_depot', -30, 30, 2, 'cleaning_depot');
+    
+    // Log building summary
+    console.log(`[BUILDINGS] Total building instances (voxels): ${totalBuildingInstances}`);
+    buildingModelCounts.forEach((count, modelId) => {
+      console.log(`  ${modelId}: ${count} buildings`);
+    });
 
     // Simulation loop with growth system
     const simLoop = new SimulationLoop(stateManager, buildingInstances, 42);
@@ -231,7 +273,36 @@ function App() {
       stateManager.createCharacter(i, model.id, position);
       const sim = stateManager.getCharacter(i);
       if (sim) sim.instanceIndex = index;
+      
+      // Track character instance counts
+      characterModelCounts.set(model.id, (characterModelCounts.get(model.id) || 0) + 1);
+      totalCharacterInstances += model.voxels.length;
     }
+    
+    // Log character summary
+    console.log(`[CHARACTERS] Total character instances (voxels): ${totalCharacterInstances}`);
+    characterModelCounts.forEach((count, modelId) => {
+      console.log(`  ${modelId}: ${count} characters`);
+    });
+    
+    // Update bounding spheres for frustum culling
+    buildingRenderer.updateBoundingSpheres();
+    charRenderer.updateBoundingSpheres();
+    
+    // Disable frustum culling for all objects (everything is within view anyway)
+    buildingRenderer.disableFrustumCulling();
+    charRenderer.disableFrustumCulling();
+    
+    // Log frustum culling status for debugging
+    let cullingDisabledCount = 0;
+    let totalMeshes = 0;
+    ctx.scene.traverse((obj) => {
+      if (obj instanceof THREE.InstancedMesh) {
+        totalMeshes++;
+        if (!obj.frustumCulled) cullingDisabledCount++;
+      }
+    });
+    console.log(`[CULLING] Total meshes: ${totalMeshes}, Culling disabled: ${cullingDisabledCount}`);
 
     // Create outline pairs - buildings are static, characters are dynamic
     for (const mesh of buildingRenderer.getMeshes()) {
@@ -249,9 +320,12 @@ function App() {
     }
 
     // Render loop using requestAnimationFrame (browser-optimized, no throttling)
+    const TARGET_FPS = 60;
+    const FRAME_TIME_MS = 1000 / TARGET_FPS;
     let running = true;
     let frameCount = 0;
     let lastLogTime = performance.now();
+    let lastSceneLogTime = performance.now();
     let lastFrameTime = performance.now();
     const timings: Record<string, number> = {};
     const frameIntervals: number[] = [];
@@ -261,9 +335,13 @@ function App() {
       requestAnimationFrame(animate);
 
       const now = performance.now();
-      const frameInterval = now - lastFrameTime;
-      lastFrameTime = now;
-      frameIntervals.push(frameInterval);
+      const elapsed = now - lastFrameTime;
+      
+      // Frame rate cap: skip if not enough time has passed
+      if (elapsed < FRAME_TIME_MS) return;
+      
+      lastFrameTime = now - (elapsed % FRAME_TIME_MS); // Maintain accurate timing
+      frameIntervals.push(elapsed);
       if (frameIntervals.length > 60) frameIntervals.shift();
 
       const frameStart = now;
@@ -307,6 +385,22 @@ function App() {
         
         console.log(`[PERF] ${elapsedSec}s elapsed, Frames: ${frameCount}, Intervals: avg=${avgInterval}ms min=${minInterval}ms max=${maxInterval}ms`);
         console.log(`  Total: ${avg('total')}ms, CharUpdate: ${avg('charUpdate')}ms, Render: ${avg('render')}ms`);
+        
+        // Log what's being drawn
+        if (currentTime - lastSceneLogTime > 5000) { // Log scene every 5 seconds
+          const info = ctx.renderer.info;
+          console.log(`[SCENE] Triangles: ${info.render.triangles}, Calls: ${info.render.calls}, Textures: ${info.memory.textures}, Geometries: ${info.memory.geometries}`);
+          console.log(`  Terrain: ${totalTerrainInstances} tiles, Buildings: ${totalBuildingInstances} voxels, Characters: ${totalCharacterInstances} voxels`);
+          console.log(`  Building models: ${buildingModelCounts.size} types, Character models: ${characterModelCounts.size} types`);
+          
+          // Camera info for frustum culling analysis
+          const camera = ctx.camera;
+          console.log(`  Camera pos: (${camera.position.x.toFixed(1)}, ${camera.position.y.toFixed(1)}, ${camera.position.z.toFixed(1)})`);
+          console.log(`  Camera lookAt: (${camera.getWorldDirection(new THREE.Vector3()).x.toFixed(2)}, ${camera.getWorldDirection(new THREE.Vector3()).y.toFixed(2)}, ${camera.getWorldDirection(new THREE.Vector3()).z.toFixed(2)})`);
+          console.log(`  Camera FOV: ${camera.fov}, near: ${camera.near}, far: ${camera.far}`);
+          
+          lastSceneLogTime = currentTime;
+        }
         
         Object.keys(timings).forEach(k => timings[k] = 0);
         frameCount = 0;

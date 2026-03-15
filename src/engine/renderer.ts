@@ -96,11 +96,12 @@ export function initRenderer(canvas: HTMLCanvasElement): RendererContext {
 
   const renderer = new THREE.WebGLRenderer({
     canvas,
-    antialias: true,
-    preserveDrawingBuffer: true,
+    antialias: false, // Disabled for better performance
+    preserveDrawingBuffer: false,
+    powerPreference: 'high-performance',
   });
   renderer.setSize(window.innerWidth, window.innerHeight);
-  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+  renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.0)); // Fixed at 1.0 for performance
 
   const camera = new THREE.PerspectiveCamera(
     45,

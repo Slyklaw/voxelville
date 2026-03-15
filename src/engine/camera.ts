@@ -27,9 +27,9 @@ export class OrbitCamera {
     this.domElement = domElement;
     this.target = new THREE.Vector3(0, 0, 0);
 
-    // Initial spherical: radius=25, theta=PI/4 (45° horizontal), phi=PI/3 (elevation ~45°)
+    // Initial spherical: radius=50, theta=PI/4 (45° horizontal), phi=PI/3 (elevation ~45°)
     this.spherical = {
-      radius: 25,
+      radius: 50,
       theta: PI / 4,
       phi: PI / 3,
     };
@@ -78,7 +78,7 @@ export class OrbitCamera {
   private onWheel(e: WheelEvent): void {
     // Zoom with scroll
     this.spherical.radius += e.deltaY * 0.05;
-    this.spherical.radius = Math.max(5, Math.min(50, this.spherical.radius));
+    this.spherical.radius = Math.max(25, Math.min(80, this.spherical.radius));
     this.applyPosition();
   }
 
@@ -86,9 +86,20 @@ export class OrbitCamera {
     const { radius, theta, phi } = this.spherical;
     const { target } = this;
 
-    const x = target.x + radius * Math.sin(phi) * Math.cos(theta);
-    const y = target.y + radius * Math.cos(phi);
-    const z = target.z + radius * Math.sin(phi) * Math.sin(theta);
+    let x = target.x + radius * Math.sin(phi) * Math.cos(theta);
+    let y = target.y + radius * Math.cos(phi);
+    let z = target.z + radius * Math.sin(phi) * Math.sin(theta);
+
+    // Ensure camera is always above ground (minimum Y = target.y + 20)
+    // Higher minimum prevents browser throttling when close to ground
+    const minY = target.y + 20;
+    if (y < minY) {
+      y = minY;
+      // Adjust phi to keep the same radius but maintain minimum height
+      const newPhi = Math.acos(Math.min(1, (y - target.y) / radius));
+      x = target.x + radius * Math.sin(newPhi) * Math.cos(theta);
+      z = target.z + radius * Math.sin(newPhi) * Math.sin(theta);
+    }
 
     this.camera.position.set(x, y, z);
     this.camera.lookAt(target);

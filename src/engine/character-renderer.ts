@@ -216,6 +216,26 @@ export class CharacterRenderer {
   }
 
   /**
+   * Update bounding spheres for all pools (for frustum culling).
+   * Call after all characters have been added.
+   */
+  updateBoundingSpheres(): void {
+    for (const pool of this.pools.values()) {
+      pool.updateBoundingSphere();
+    }
+  }
+
+  /**
+   * Disable frustum culling for all pools.
+   * Use for objects that should always render.
+   */
+  disableFrustumCulling(): void {
+    for (const pool of this.pools.values()) {
+      pool.disableFrustumCulling();
+    }
+  }
+
+  /**
    * Update character instance with animation offsets (updates all voxels).
    * Applies position interpolation, animation transforms, and rotation to all voxels.
    * @param modelId - The character model ID
