@@ -1,125 +1,152 @@
-import { BLOCKS, isBlockOpaque } from "./block.js";
+import { BLOCKS, TILE, isBlockOpaque } from "./block.js";
 import { tileUV } from "../engine/atlas.js";
 
-// Face order in BLOCKS: +x, -x, +y, -y, +z, -z
-// Vertex order per face: BL, BR, TR, TL (counter-clockwise when viewed from outside).
-// 4 vertices × (pos3, uv2, normal3) per face.
-
+// Face order: +x, -x, +y, -y, +z, -z
 const FACES = [
-  // +X (right)
-  {
-    n: [1, 0, 0],
-    v: [
-      [0.5, -0.5,  0.5], [0.5, -0.5, -0.5], [0.5,  0.5, -0.5], [0.5,  0.5,  0.5],
-    ],
-    uv: [[0, 0], [1, 0], [1, 1], [0, 1]],
-  },
-  // -X (left)
-  {
-    n: [-1, 0, 0],
-    v: [
-      [-0.5, -0.5, -0.5], [-0.5, -0.5,  0.5], [-0.5,  0.5,  0.5], [-0.5,  0.5, -0.5],
-    ],
-    uv: [[0, 0], [1, 0], [1, 1], [0, 1]],
-  },
-  // +Y (top)
-  {
-    n: [0, 1, 0],
-    v: [
-      [-0.5,  0.5,  0.5], [ 0.5,  0.5,  0.5], [ 0.5,  0.5, -0.5], [-0.5,  0.5, -0.5],
-    ],
-    uv: [[0, 0], [1, 0], [1, 1], [0, 1]],
-  },
-  // -Y (bottom)
-  {
-    n: [0, -1, 0],
-    v: [
-      [-0.5, -0.5, -0.5], [ 0.5, -0.5, -0.5], [ 0.5, -0.5,  0.5], [-0.5, -0.5,  0.5],
-    ],
-    uv: [[0, 0], [1, 0], [1, 1], [0, 1]],
-  },
-  // +Z (front)
-  {
-    n: [0, 0, 1],
-    v: [
-      [-0.5, -0.5,  0.5], [ 0.5, -0.5,  0.5], [ 0.5,  0.5,  0.5], [-0.5,  0.5,  0.5],
-    ],
-    uv: [[0, 0], [1, 0], [1, 1], [0, 1]],
-  },
-  // -Z (back)
-  {
-    n: [0, 0, -1],
-    v: [
-      [ 0.5, -0.5, -0.5], [-0.5, -0.5, -0.5], [-0.5,  0.5, -0.5], [ 0.5,  0.5, -0.5],
-    ],
-    uv: [[0, 0], [1, 0], [1, 1], [0, 1]],
-  },
+  { n: [1, 0, 0],  v: [[0.5,-0.5, 0.5],[0.5,-0.5,-0.5],[0.5, 0.5,-0.5],[0.5, 0.5, 0.5]], uv: [[0,0],[1,0],[1,1],[0,1]] },
+  { n: [-1, 0, 0], v: [[-0.5,-0.5,-0.5],[-0.5,-0.5, 0.5],[-0.5, 0.5, 0.5],[-0.5, 0.5,-0.5]], uv: [[0,0],[1,0],[1,1],[0,1]] },
+  { n: [0, 1, 0],  v: [[-0.5, 0.5, 0.5],[ 0.5, 0.5, 0.5],[ 0.5, 0.5,-0.5],[-0.5, 0.5,-0.5]], uv: [[0,0],[1,0],[1,1],[0,1]] },
+  { n: [0,-1, 0],  v: [[-0.5,-0.5,-0.5],[ 0.5,-0.5,-0.5],[ 0.5,-0.5, 0.5],[-0.5,-0.5, 0.5]], uv: [[0,0],[1,0],[1,1],[0,1]] },
+  { n: [0, 0, 1],  v: [[-0.5,-0.5, 0.5],[ 0.5,-0.5, 0.5],[ 0.5, 0.5, 0.5],[-0.5, 0.5, 0.5]], uv: [[0,0],[1,0],[1,1],[0,1]] },
+  { n: [0, 0,-1],  v: [[ 0.5,-0.5,-0.5],[-0.5,-0.5,-0.5],[-0.5, 0.5,-0.5],[ 0.5, 0.5,-0.5]], uv: [[0,0],[1,0],[1,1],[0,1]] },
 ];
 
-// Per-vertex layout: pos(3) + uv(2) + normal(3) = 8 floats
-export const BLOCK_VERTEX_FLOATS = 8;
-export const BLOCK_FLOATS_PER_FACE = 4 * BLOCK_VERTEX_FLOATS;
-export const BLOCK_INDICES_PER_FACE = 6;
-export const BLOCK_FACES = 6;
+// Neighbor offsets corresponding to each face (in world block coords, relative to this block).
+const NEIGHBOR_OFFSETS = [
+  [ 1,  0,  0], // +X
+  [-1,  0,  0], // -X
+  [ 0,  1,  0], // +Y
+  [ 0, -1,  0], // -Y
+  [ 0,  0,  1], // +Z
+  [ 0,  0, -1], // -Z
+];
 
-const FACE_TILE_INDEX = {
-  0: 0, 1: 1, 2: 2, 3: 3, 4: 4, 5: 5,
-};
+const FLOATS_PER_VERT = 8; // pos3 + uv2 + light3
+const VERTS_PER_FACE = 4;
+const INDICES_PER_FACE = 6;
 
-// Build a single lit block (no culling) with all 6 faces and a constant light per face.
-// `light` is a [r, g, b] color in 0..1; same for every vertex of the face.
-// `x,y,z` is the world block position (integer).
-export function buildBlockFaces(blockId, x, y, z, light) {
+// Build a single block's mesh (no neighbor culling). Returns Float32Array positions
+// (8 floats per vertex) and Uint16Array indices (6 per face), with a baseVertex offset
+// baked into the indices (so a single chunk buffer can hold many blocks).
+export function buildBlockFaces(blockId, x, y, z, light, baseVertex) {
   const block = BLOCKS[blockId];
   if (!block || !block.faces) return null;
 
-  const positions = new Float32Array(BLOCK_FLOATS_PER_FACE * BLOCK_FACES);
-  const indices = new Uint16Array(BLOCK_INDICES_PER_FACE * BLOCK_FACES);
+  const positions = new Float32Array(VERTS_PER_FACE * FLOATS_PER_VERT * 6);
+  const indices = new Uint16Array(INDICES_PER_FACE * 6);
 
   let vOff = 0;
   let iOff = 0;
+  const base = baseVertex | 0;
 
-  for (let f = 0; f < BLOCK_FACES; f++) {
+  for (let f = 0; f < 6; f++) {
     const face = FACES[f];
     const tile = block.faces[f];
     if (tile < 0) continue;
     const [u0, v0, u1, v1] = tileUV(tile);
-
-    // Per-face diffuse tint (already computed by caller; same value for all 4 verts of this face).
     const lr = light[0];
     const lg = light[1];
     const lb = light[2];
 
-    const baseVertex = vOff;
-
     for (let i = 0; i < 4; i++) {
       const v = face.v[i];
       const uv = face.uv[i];
-      const o = vOff * 8;
+      const o = vOff * FLOATS_PER_VERT;
       positions[o + 0] = x + v[0];
       positions[o + 1] = y + v[1];
       positions[o + 2] = z + v[2];
-      // Map face-local UV (0..1) into atlas tile UV.
-      // Atlas V=0 corresponds to the top of the source image (no UNPACK_FLIP_Y on upload),
-      // and a face's "top" (uv.y = 1) should sample the top of the image. So we invert.
+      // Atlas V=0 is the top of the source image; face "top" (uv.y=1) should sample the top.
       positions[o + 3] = uv[0] === 0 ? u0 : u1;
       positions[o + 4] = uv[1] === 0 ? v1 : v0;
-      // a_light is a per-face diffuse tint, not the world-space normal.
       positions[o + 5] = lr;
       positions[o + 6] = lg;
       positions[o + 7] = lb;
       vOff++;
     }
 
-    const base = iOff;
-    indices[base + 0] = baseVertex + 0;
-    indices[base + 1] = baseVertex + 1;
-    indices[base + 2] = baseVertex + 2;
-    indices[base + 3] = baseVertex + 0;
-    indices[base + 4] = baseVertex + 2;
-    indices[base + 5] = baseVertex + 3;
-    iOff += 6;
+    const ibase = iOff;
+    indices[ibase + 0] = base + iOff + 0;
+    indices[ibase + 1] = base + iOff + 1;
+    indices[ibase + 2] = base + iOff + 2;
+    indices[ibase + 3] = base + iOff + 0;
+    indices[ibase + 4] = base + iOff + 2;
+    indices[ibase + 5] = base + iOff + 3;
+    iOff += 4;
   }
 
-  return { positions, indices, count: iOff };
+  return { positions, indices, vertexCount: vOff, indexCount: iOff };
+}
+
+// A face is visible when the neighbor block is either missing, transparent, or
+// (for the special transparent-transparent case) different.
+function shouldDrawFace(selfId, neighborId) {
+  if (neighborId === 0) return true; // air
+  if (selfId === neighborId) {
+    // Same block: never cull (e.g. two water blocks share a face).
+    return false;
+  }
+  const self = BLOCKS[selfId];
+  const neigh = BLOCKS[neighborId];
+  if (!self || !neigh) return true;
+  // Draw the face if either block is not fully opaque.
+  return !self.isOpaque || !neigh.isOpaque;
+}
+
+// Build a chunk's mesh in one pass. cullFaces is a callback (x,y,z,face) => boolean.
+// light is a per-face precomputed diffuse color (single [r,g,b] for the whole chunk for v0.1).
+export function buildChunkMesh(chunk, getNeighborBlock, light) {
+  const SIZE = 16;
+  const positions = [];
+  const indices = [];
+  let vertexBase = 0;
+
+  for (let lx = 0; lx < SIZE; lx++) {
+    for (let y = 0; y < 16; y++) {
+      for (let lz = 0; lz < SIZE; lz++) {
+        const id = chunk.get(lx, y, lz);
+        if (id === 0) continue;
+        const block = BLOCKS[id];
+        if (!block || !block.faces) continue;
+
+        const wx = chunk.cx * SIZE + lx;
+        const wy = y;
+        const wz = chunk.cz * SIZE + lz;
+
+        for (let f = 0; f < 6; f++) {
+          const off = NEIGHBOR_OFFSETS[f];
+          const nx = wx + off[0];
+          const ny = wy + off[1];
+          const nz = wz + off[2];
+          const neighborId = getNeighborBlock(nx, ny, nz);
+          if (!shouldDrawFace(id, neighborId)) continue;
+
+          const face = FACES[f];
+          const tile = block.faces[f];
+          if (tile < 0) continue;
+          const [u0, v0, u1, v1] = tileUV(tile);
+          const lr = light[0];
+          const lg = light[1];
+          const lb = light[2];
+
+          for (let i = 0; i < 4; i++) {
+            const v = face.v[i];
+            const uv = face.uv[i];
+            positions.push(wx + v[0], wy + v[1], wz + v[2]);
+            positions.push(uv[0] === 0 ? u0 : u1);
+            positions.push(uv[1] === 0 ? v1 : v0);
+            positions.push(lr, lg, lb);
+          }
+          const start = vertexBase;
+          indices.push(start + 0, start + 1, start + 2, start + 0, start + 2, start + 3);
+          vertexBase += 4;
+        }
+      }
+    }
+  }
+
+  return {
+    positions: new Float32Array(positions),
+    indices: positions.length === 0 ? new Uint16Array(0) : new Uint16Array(indices),
+    indexCount: indices.length,
+  };
 }
