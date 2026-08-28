@@ -100,8 +100,10 @@ export function buildBlockFaces(blockId, x, y, z, light) {
       positions[o + 1] = y + v[1];
       positions[o + 2] = z + v[2];
       // Map face-local UV (0..1) into atlas tile UV.
+      // Atlas V=0 corresponds to the top of the source image (no UNPACK_FLIP_Y on upload),
+      // and a face's "top" (uv.y = 1) should sample the top of the image. So we invert.
       positions[o + 3] = uv[0] === 0 ? u0 : u1;
-      positions[o + 4] = uv[1] === 0 ? v0 : v1;
+      positions[o + 4] = uv[1] === 0 ? v1 : v0;
       // a_light is a per-face diffuse tint, not the world-space normal.
       positions[o + 5] = lr;
       positions[o + 6] = lg;
