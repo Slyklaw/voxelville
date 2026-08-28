@@ -1,1 +1,3 @@
 # voxelville
+
+Create a highly detailed design doc for a Minecraft clone game. Specify as many features as possible, but only ones that are in the real Minecraft. Tech stack will be html/css/js with no external dependencies. Write the design to design.md.
