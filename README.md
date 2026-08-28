@@ -7,3 +7,7 @@ Now create a plan to implement a playable game with a minimal amount of features
 Implement Phase 0.
 
 python3 -m http.server
+
+Implement Phase 1.
+
+Implement Phase 2.
