@@ -273,7 +273,7 @@ const debugIbo = gl.createBuffer();
 gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, debugIbo);
 gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, blockData.indices, gl.STATIC_DRAW);
 const debugIndexCount = blockData.count;
-console.log("[voxelville] debug cube ready — toggle with F3");
+console.log("[voxelville] debug cube ready — toggle with J");
 
 gl.clearColor(0.5, 0.7, 1.0, 1.0);
 gl.enable(gl.DEPTH_TEST);

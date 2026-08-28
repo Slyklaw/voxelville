@@ -71,63 +71,99 @@ function fillTile(buf, ox, oy, palette, pattern) {
 
 // Patterns: return palette index 0..3.
 const patterns = {
-  grass_top(x, y, pal) {
-    const t = (x * 7 + y * 13) % 5;
-    return t < 3 ? 0 : t === 3 ? 1 : 2;
+  // Grass top: small irregular clumps of slightly-darker pixels (mimics grass blades).
+  // Seeded by position so it doesn't look like uniform noise when stretched.
+  grass_top(x, y) {
+    // Cluster centers placed on a rough grid with jitter.
+    const cx = ((x * 1103515245 + 12345) >>> 0) % 16;
+    const cy = ((y * 2246822519 + 1) >>> 0) % 16;
+    const d2 = (x - cx) * (x - cx) + (y - cy) * (y - cy);
+    if (d2 < 4) return 2;
+    if (d2 < 9) return 1;
+    return 0;
   },
-  grass_side(x, y, pal) {
-    if (y < 4) return ((x * 3) % 4);
+  // Grass side: top 4 rows green, row 4 = transition (alternating), rows 5..15 = dirt with specks.
+  grass_side(x, y) {
+    if (y < 4) return patterns.grass_top(x, y);
     if (y === 4) {
-      const wavy = (x + ((y * 5) % 3)) % 2;
-      return wavy ? 0 : 1;
+      // Transition: most of the row is grass, with 1-2 dirt intrusions per row.
+      const inv = ((x * 7) % 5) === 0;
+      return inv ? 2 : 0;
     }
-    return ((x + y * 2) % 4);
+    // Dirt body: occasional darker speck.
+    const speck = (x * 13 + y * 19) % 7 === 0;
+    return speck ? 2 : ((x * 3 + y * 5) % 4);
   },
   dirt(x, y) {
-    return ((x * 11 + y * 17) % 4);
+    // Slight bias toward lighter shades, with sparse darker pixels.
+    const base = ((x * 11 + y * 17) % 4);
+    if ((x * 7 + y * 13) % 11 === 0) return 2;
+    return base;
   },
   stone(x, y) {
-    return ((x * 13 + y * 19) % 4);
+    // Mottled grey.
+    const base = ((x * 13 + y * 19) % 4);
+    if ((x * 5 + y * 11) % 13 === 0) return 3;
+    return base;
   },
   sand(x, y) {
-    return ((x * 17 + y * 23) % 4);
+    // Mostly uniform light with sparse darker grains.
+    const base = ((x * 17 + y * 23) % 4);
+    if ((x * 3 + y * 7) % 9 === 0) return 1;
+    return base;
   },
   water(x, y) {
-    return ((x * 5 + y * 11) % 4);
+    // Slight wave pattern.
+    const wave = Math.sin(x * 0.8 + y * 0.3) * 0.5 + 0.5;
+    return wave > 0.5 ? 1 : 0;
   },
   log_side(x, y) {
+    // Vertical bark: dark edges, lighter center, sparse vertical streaks.
     if (x === 0 || x === 15) return 3;
     if (x === 1 || x === 14) return 2;
+    if (x % 4 === 0) return 2;
     return ((x + y) % 2) ? 0 : 1;
   },
   log_top(x, y) {
+    // Concentric rings.
     const dx = x - 7.5;
     const dy = y - 7.5;
     const r = Math.sqrt(dx * dx + dy * dy);
     if (r > 7) return 0;
-    if (r > 5) return 1;
-    if (r > 2.5) return 2;
-    return 3;
+    if (r > 5.5) return 1;
+    if (r > 4) return 2;
+    if (r > 2.5) return 1;
+    return 0;
   },
   planks(x, y) {
-    const yBand = y % 4 === 0 ? 0 : 1;
-    if (yBand === 0) return 0;
-    const xBand = x % 8 === 0 ? 2 : 1;
-    return xBand;
+    // Horizontal plank lines: row 0, 4, 8, 12 are seams.
+    if (y % 4 === 0) return 0;
+    if (y % 4 === 1) return 1;
+    // Vertical grain lines at x = 5, 10.
+    if (x === 5 || x === 10) return 2;
+    return 1;
   },
   leaves(x, y) {
-    return ((x * 7 + y * 11 + ((x * y) % 5)) % 4);
+    // Patchy with a few darker "shadow" leaves.
+    const base = ((x * 7 + y * 11 + ((x * y) % 5)) % 4);
+    if ((x + y * 3) % 7 === 0) return 3;
+    return base;
   },
   glass(x, y) {
     if (x === 0 || y === 0 || x === 15 || y === 15) return 3;
     return 0;
   },
   cobble(x, y) {
-    if (x === 0 || x === 15 || y === 0 || y === 15) return 3;
-    const mid = ((x + y) % 3 === 0) ? 2 : ((x * y) % 2);
-    return mid;
+    // Irregular mortar lines + cobble shape.
+    if (x === 0 || y === 0 || x === 15 || y === 15) return 3;
+    if (x === 8 || y === 4 || y === 12) return 3;
+    if (x === 4 && y < 4) return 2;
+    if (x === 12 && y > 11) return 2;
+    return ((x * y + x + y) % 3) ? 0 : 1;
   },
   bedrock(x, y) {
+    // Coarse, dark, irregular.
+    if ((x * 23 + y * 29 + (x ^ y)) % 5 === 0) return 3;
     return ((x * 23 + y * 29 + (x ^ y)) % 4);
   },
 };
@@ -176,30 +212,40 @@ export function buildAtlas() {
       }
     }
 
-    // Grass side: top 4 rows = grass_top, row 4 = transition (mix with dirt), bottom 11 = dirt.
+    // Grass side composite:
+    //   rows 0..3   = grass_top pattern (irregular green clumps)
+    //   row 4       = transition: mostly green with 1-2 dirt intrusions
+    //   rows 5..15  = dirt body (brown) with sparse darker specks
     if (tile === TILE.GRASS_SIDE) {
       const grassPal = palettes.grass_top.map(hexToRgb);
+      const dirtPal = palettes.dirt.map(hexToRgb);
+
+      // rows 0..3: grass-top pattern
       for (let y = 0; y < 4; y++) {
         for (let x = 0; x < TILE_SIZE; x++) {
-          const idx = patterns.grass_top(x, y, grassPal);
+          const idx = patterns.grass_top(x, y);
           const c = grassPal[idx];
           const i = ((oy + y) * ATLAS_SIZE + (ox + x)) * 4;
-          buf[i] = c[0];
-          buf[i + 1] = c[1];
-          buf[i + 2] = c[2];
-          buf[i + 3] = 255;
+          buf[i] = c[0]; buf[i + 1] = c[1]; buf[i + 2] = c[2]; buf[i + 3] = 255;
         }
       }
-      // transition row
-      const dirtPal = palettes.dirt.map(hexToRgb);
+      // row 4: transition
       for (let x = 0; x < TILE_SIZE; x++) {
-        const useGrass = (x + (4 * 5)) % 3 !== 0;
-        const c = useGrass ? grassPal[0] : dirtPal[2];
+        const isDirtIntrusion = (x === 2) || (x === 7) || (x === 13);
+        const c = isDirtIntrusion ? dirtPal[2] : grassPal[0];
         const i = ((oy + 4) * ATLAS_SIZE + (ox + x)) * 4;
-        buf[i] = c[0];
-        buf[i + 1] = c[1];
-        buf[i + 2] = c[2];
-        buf[i + 3] = 255;
+        buf[i] = c[0]; buf[i + 1] = c[1]; buf[i + 2] = c[2]; buf[i + 3] = 255;
+      }
+      // rows 5..15: dirt body
+      for (let y = 5; y < TILE_SIZE; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const speck = (x * 13 + y * 19) % 7 === 0;
+          const base = ((x * 3 + y * 5) % 4);
+          const cIdx = speck ? 2 : base;
+          const c = dirtPal[cIdx];
+          const i = ((oy + y) * ATLAS_SIZE + (ox + x)) * 4;
+          buf[i] = c[0]; buf[i + 1] = c[1]; buf[i + 2] = c[2]; buf[i + 3] = 255;
+        }
       }
     }
   }
