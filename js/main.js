@@ -4,7 +4,8 @@ import { createBuffer, createTexture2D, makeCheckerPixels } from "./engine/textu
 import { Camera } from "./engine/camera.js";
 import { Input, attachInput } from "./engine/input.js";
 import { buildAtlas, atlasToCanvas, tileUV } from "./engine/atlas.js";
-import { ATLAS_SIZE, BLOCKS } from "./world/block.js";
+import { ATLAS_SIZE, BLOCKS, TILE } from "./world/block.js";
+import { buildBlockFaces } from "./world/blockmesh.js";
 
 const canvas = document.getElementById("gl");
 const { gl, isWebGL2 } = createGL(canvas);
@@ -17,7 +18,7 @@ Input.setLockChangeHandler((locked) => {
 
 const camera = new Camera({ fov: 70, near: 0.1, far: 1000 });
 
-// ---------- Triangle (Phase 1 carryover) ----------
+// ---------- Phase 1 carryover: triangle ----------
 const triVertSrc = `#version 300 es
 in vec2 a_pos;
 in vec2 a_uv;
@@ -66,7 +67,7 @@ void main() {
   window.__phase1 = { prog, locs, vbo, uvbo, tex };
 }
 
-// ---------- Wireframe cube (Phase 2 carryover) ----------
+// ---------- Phase 2 carryover: wireframe cube ----------
 const cubeVertSrc = `#version 300 es
 in vec3 a_pos;
 in vec3 a_color;
@@ -118,7 +119,7 @@ const cubeVbo = createBuffer(gl, gl.ARRAY_BUFFER, cubePositions);
 const cubeCbo = createBuffer(gl, gl.ARRAY_BUFFER, cubeColors);
 const cubeLineCount = cubeEdges.length;
 
-// ---------- Phase 3: procedural atlas preview quad ----------
+// ---------- Phase 3 carryover: atlas + preview quad ----------
 const atlasVerts = new Float32Array([
   -1, -1,  0, 1,
    1, -1,  1, 1,
@@ -128,7 +129,6 @@ const atlasVerts = new Float32Array([
   -1,  1,  0, 0,
 ]);
 const atlasVbo = createBuffer(gl, gl.ARRAY_BUFFER, atlasVerts);
-
 const atlasVertSrc = `#version 300 es
 in vec2 a_pos;
 in vec2 a_uv;
@@ -152,37 +152,134 @@ const atlasLocs = {
   attribs: attributes(gl, atlasProg, ["a_pos", "a_uv"]),
   uniforms: uniforms(gl, atlasProg, ["u_tex"]),
 };
-
 const atlasPixels = buildAtlas();
 const atlasTex = createTexture2D(gl, { min: gl.NEAREST, mag: gl.NEAREST, wrapS: gl.CLAMP_TO_EDGE, wrapT: gl.CLAMP_TO_EDGE });
 gl.bindTexture(gl.TEXTURE_2D, atlasTex);
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, ATLAS_SIZE, ATLAS_SIZE, 0, gl.RGBA, gl.UNSIGNED_BYTE, atlasPixels);
 
-// Surface a couple of tile UVs to the console for the sanity check.
-const samples = [
-  ["grass_top", "grass_top"],
-  ["dirt", "dirt"],
-  ["stone", "stone"],
-  ["sand", "sand"],
-  ["water", "water"],
-  ["log_side", "log_side"],
-  ["log_top", "log_top"],
-  ["planks", "planks"],
-  ["leaves", "leaves"],
-  ["glass", "glass"],
-  ["cobble", "cobble"],
-  ["bedrock", "bedrock"],
-];
-for (const [name, key] of samples) {
-  const id = Object.values(BLOCKS).find((b) => b.name === name);
-  if (!id) continue;
+// ---------- Phase 4: textured, lit block cube ----------
+// Fixed sun light direction (slightly above and to the side).
+const LIGHT_DIR = [0.4, 1.0, 0.3];
+{
+  const l = Math.hypot(LIGHT_DIR[0], LIGHT_DIR[1], LIGHT_DIR[2]);
+  LIGHT_DIR[0] /= l; LIGHT_DIR[1] /= l; LIGHT_DIR[2] /= l;
 }
-const blockNames = Object.values(BLOCKS).map((b) => b.name).filter(Boolean);
-console.log(`[voxelville] atlas generated: ${ATLAS_SIZE}x${ATLAS_SIZE}, blocks: ${blockNames.join(", ")}`);
+const AMBIENT = 0.35;
 
-gl.clearColor(0.12, 0.18, 0.32, 1.0);
+const blockVertSrc = `#version 300 es
+in vec3 a_pos;
+in vec2 a_uv;
+in vec3 a_light;
+uniform mat4 u_mvp;
+out vec2 v_uv;
+out vec3 v_light;
+void main() {
+  gl_Position = u_mvp * vec4(a_pos, 1.0);
+  v_uv = a_uv;
+  v_light = a_light;
+}
+`;
+const blockFragSrc = `#version 300 es
+precision highp float;
+in vec2 v_uv;
+in vec3 v_light;
+out vec4 outColor;
+uniform sampler2D u_tex;
+void main() {
+  vec4 c = texture(u_tex, v_uv);
+  outColor = vec4(c.rgb * v_light, c.a);
+}
+`;
+const blockProg = build(gl, blockVertSrc, blockFragSrc);
+const blockLocs = {
+  attribs: attributes(gl, blockProg, ["a_pos", "a_uv", "a_light"]),
+  uniforms: uniforms(gl, blockProg, ["u_mvp", "u_tex"]),
+};
+
+// Per-face shading: ambient + dot(normal, lightDir) clamped, then stored as RGB tint in the light attribute.
+const faces = ["+x", "-x", "+y", "-y", "+z", "-z"];
+const faceNormals = [
+  [ 1,  0,  0],
+  [-1,  0,  0],
+  [ 0,  1,  0],
+  [ 0, -1,  0],
+  [ 0,  0,  1],
+  [ 0,  0, -1],
+];
+const faceLight = faceNormals.map((n) => {
+  const d = n[0] * LIGHT_DIR[0] + n[1] * LIGHT_DIR[1] + n[2] * LIGHT_DIR[2];
+  const k = Math.max(0, d);
+  return [AMBIENT + k, AMBIENT + k, AMBIENT + k];
+});
+
+// Build one grass block at the origin.
+const blockData = buildBlockFaces(1 /* grass */, 0, 0, 0, faceLight[0]);
+const blockVbo = createBuffer(gl, gl.ARRAY_BUFFER, blockData.positions);
+const blockIbo = gl.createBuffer();
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, blockIbo);
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, blockData.indices, gl.STATIC_DRAW);
+const blockIndexCount = blockData.count;
+
+// ---------- Phase 4 debug: per-face solid-color cube ----------
+const debugVertSrc = `#version 300 es
+in vec3 a_pos;
+in vec3 a_color;
+uniform mat4 u_mvp;
+out vec3 v_color;
+void main() {
+  gl_Position = u_mvp * vec4(a_pos, 1.0);
+  v_color = a_color;
+}
+`;
+const debugFragSrc = `#version 300 es
+precision highp float;
+in vec3 v_color;
+out vec4 outColor;
+void main() {
+  outColor = vec4(v_color, 1.0);
+}
+`;
+const debugProg = build(gl, debugVertSrc, debugFragSrc);
+const debugLocs = {
+  attribs: attributes(gl, debugProg, ["a_pos", "a_color"]),
+  uniforms: uniforms(gl, debugProg, ["u_mvp"]),
+};
+const FACE_COLORS = [
+  [1.0, 0.3, 0.3], // +X  red
+  [0.3, 1.0, 0.3], // -X  green
+  [0.3, 0.3, 1.0], // +Y  blue
+  [1.0, 1.0, 0.3], // -Y  yellow
+  [1.0, 0.3, 1.0], // +Z  magenta
+  [0.3, 1.0, 1.0], // -Z  cyan
+];
+const debugPositions = new Float32Array(24 * 3);
+const debugColors = new Float32Array(24 * 3);
+for (let f = 0; f < 6; f++) {
+  for (let i = 0; i < 4; i++) {
+    const src = (f * 4 + i) * 8;
+    const dst = (f * 4 + i) * 3;
+    debugPositions[dst + 0] = blockData.positions[src + 0];
+    debugPositions[dst + 1] = blockData.positions[src + 1];
+    debugPositions[dst + 2] = blockData.positions[src + 2];
+    debugColors[dst + 0] = FACE_COLORS[f][0];
+    debugColors[dst + 1] = FACE_COLORS[f][1];
+    debugColors[dst + 2] = FACE_COLORS[f][2];
+  }
+}
+const debugVbo = createBuffer(gl, gl.ARRAY_BUFFER, debugPositions);
+const debugCbo = createBuffer(gl, gl.ARRAY_BUFFER, debugColors);
+const debugIbo = gl.createBuffer();
+gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, debugIbo);
+gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, blockData.indices, gl.STATIC_DRAW);
+const debugIndexCount = blockData.count;
+console.log("[voxelville] debug cube ready — toggle with F3");
+
+gl.clearColor(0.5, 0.7, 1.0, 1.0);
 gl.enable(gl.DEPTH_TEST);
+gl.enable(gl.CULL_FACE);
+gl.cullFace(gl.BACK);
+gl.frontFace(gl.CCW);
 
 let lastTime = performance.now();
 let fpsAccum = 0;
@@ -191,6 +288,7 @@ let fpsTimer = 0;
 
 const sensitivity = 0.0025;
 let showAtlas = true;
+let debugCube = false;
 
 function frame(now) {
   const dt = (now - lastTime) / 1000;
@@ -205,7 +303,8 @@ function frame(now) {
   }
   Input.resetMouseDelta();
 
-  if (Input.consumeKeyPress("F1")) showAtlas = !showAtlas;
+  if (Input.consumeKeyPress("KeyH")) showAtlas = !showAtlas;
+  if (Input.consumeKeyPress("KeyJ")) debugCube = !debugCube;
 
   if (!showAtlas) {
     const speed = (Input.isKeyDown("ShiftLeft") || Input.isKeyDown("ShiftRight")) ? 6 : 3;
@@ -245,17 +344,56 @@ function frame(now) {
     gl.drawArrays(gl.TRIANGLES, 0, 6);
     gl.enable(gl.DEPTH_TEST);
   } else {
-    const vp = camera.getViewProj();
-    gl.useProgram(cubeProg);
-    gl.uniformMatrix4fv(cubeLocs.uniforms.u_mvp, false, vp);
-    gl.bindBuffer(gl.ARRAY_BUFFER, cubeVbo);
-    gl.enableVertexAttribArray(cubeLocs.attribs.a_pos);
-    gl.vertexAttribPointer(cubeLocs.attribs.a_pos, 3, gl.FLOAT, false, 0, 0);
-    gl.bindBuffer(gl.ARRAY_BUFFER, cubeCbo);
-    gl.enableVertexAttribArray(cubeLocs.attribs.a_color);
-    gl.vertexAttribPointer(cubeLocs.attribs.a_color, 3, gl.FLOAT, false, 0, 0);
-    gl.lineWidth(2);
-    gl.drawArrays(gl.LINES, 0, cubeLineCount);
+    // Block (lit, textured)
+    {
+      const vp = camera.getViewProj();
+      gl.useProgram(blockProg);
+      gl.uniformMatrix4fv(blockLocs.uniforms.u_mvp, false, vp);
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+      gl.uniform1i(blockLocs.uniforms.u_tex, 0);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, blockVbo);
+      gl.enableVertexAttribArray(blockLocs.attribs.a_pos);
+      gl.vertexAttribPointer(blockLocs.attribs.a_pos, 3, gl.FLOAT, false, 32, 0);
+      gl.enableVertexAttribArray(blockLocs.attribs.a_uv);
+      gl.vertexAttribPointer(blockLocs.attribs.a_uv, 2, gl.FLOAT, false, 32, 12);
+      gl.enableVertexAttribArray(blockLocs.attribs.a_light);
+      gl.vertexAttribPointer(blockLocs.attribs.a_light, 3, gl.FLOAT, false, 32, 20);
+
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, blockIbo);
+      gl.drawElements(gl.TRIANGLES, blockData.indices.length, gl.UNSIGNED_SHORT, 0);
+    }
+
+    // Debug: per-face solid color cube (overrides textured cube when enabled)
+    if (debugCube) {
+      const vp = camera.getViewProj();
+      gl.useProgram(debugProg);
+      gl.uniformMatrix4fv(debugLocs.uniforms.u_mvp, false, vp);
+      gl.bindBuffer(gl.ARRAY_BUFFER, debugVbo);
+      gl.enableVertexAttribArray(debugLocs.attribs.a_pos);
+      gl.vertexAttribPointer(debugLocs.attribs.a_pos, 3, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, debugCbo);
+      gl.enableVertexAttribArray(debugLocs.attribs.a_color);
+      gl.vertexAttribPointer(debugLocs.attribs.a_color, 3, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, debugIbo);
+      gl.drawElements(gl.TRIANGLES, debugIndexCount, gl.UNSIGNED_SHORT, 0);
+    }
+
+    // Wireframe cube overlay (Phase 2 carryover, drawn at origin for visual reference)
+    {
+      const vp = camera.getViewProj();
+      gl.useProgram(cubeProg);
+      gl.uniformMatrix4fv(cubeLocs.uniforms.u_mvp, false, vp);
+      gl.bindBuffer(gl.ARRAY_BUFFER, cubeVbo);
+      gl.enableVertexAttribArray(cubeLocs.attribs.a_pos);
+      gl.vertexAttribPointer(cubeLocs.attribs.a_pos, 3, gl.FLOAT, false, 0, 0);
+      gl.bindBuffer(gl.ARRAY_BUFFER, cubeCbo);
+      gl.enableVertexAttribArray(cubeLocs.attribs.a_color);
+      gl.vertexAttribPointer(cubeLocs.attribs.a_color, 3, gl.FLOAT, false, 0, 0);
+      gl.lineWidth(2);
+      gl.drawArrays(gl.LINES, 0, cubeLineCount);
+    }
   }
 
   fpsAccum += dt;
