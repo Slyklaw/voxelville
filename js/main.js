@@ -173,7 +173,7 @@ function frame(now) {
   camera.setAspect(aspect);
 
   if (Input.isPointerLocked()) {
-    camera.rotate(Input.mouseDeltaX() * sensitivity, Input.mouseDeltaY() * sensitivity);
+    camera.rotate(Input.mouseDeltaX() * sensitivity, -Input.mouseDeltaY() * sensitivity);
   }
   Input.resetMouseDelta();
 

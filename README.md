@@ -23,3 +23,7 @@ Implement Phase 5.
 *** 100K context size. Insufficent balance ***
 
 Review design.md and then plan.md. Implement Phase 6.
+
+Invert the lookUp/Down camera movement. Pushing the mouse forward should look up, etc.
+
+Implement Phase 7.
