@@ -8,6 +8,7 @@ import { ATLAS_SIZE } from "./world/block.js";
 import { World } from "./world/world.js";
 import { CHUNK_SIZE } from "./world/chunk.js";
 import { buildChunkMesh } from "./world/blockmesh.js";
+import { Player } from "./entity/player.js";
 
 const canvas = document.getElementById("gl");
 const { gl, isWebGL2 } = createGL(canvas);
@@ -156,8 +157,15 @@ let fpsTimer = 0;
 
 const sensitivity = 0.0025;
 
+// ---- Player ----
+const player = new Player(camera, world);
+player.setPosition(0, 18, 0);
+camera.yaw = -Math.PI / 2;
+camera.pitch = -0.2;
+player.syncCamera();
+
 function frame(now) {
-  const dt = (now - lastTime) / 1000;
+  const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
 
   resizeCanvas(canvas, gl);
@@ -169,25 +177,9 @@ function frame(now) {
   }
   Input.resetMouseDelta();
 
-  const speed = (Input.isKeyDown("ShiftLeft") || Input.isKeyDown("ShiftRight")) ? 8 : 4;
-  const fwd = camera.forward(new Float32Array(3));
-  const right = camera.right(new Float32Array(3));
-  let dx = 0, dy = 0, dz = 0;
-  if (Input.isKeyDown("KeyW") || Input.isKeyDown("ArrowUp")) {
-    dx += fwd[0] * speed * dt; dy += fwd[1] * speed * dt; dz += fwd[2] * speed * dt;
-  }
-  if (Input.isKeyDown("KeyS") || Input.isKeyDown("ArrowDown")) {
-    dx -= fwd[0] * speed * dt; dy -= fwd[1] * speed * dt; dz -= fwd[2] * speed * dt;
-  }
-  if (Input.isKeyDown("KeyD") || Input.isKeyDown("ArrowRight")) {
-    dx += right[0] * speed * dt; dy += right[1] * speed * dt; dz += right[2] * speed * dt;
-  }
-  if (Input.isKeyDown("KeyA") || Input.isKeyDown("ArrowLeft")) {
-    dx -= right[0] * speed * dt; dy -= right[1] * speed * dt; dz -= right[2] * speed * dt;
-  }
-  if (Input.isKeyDown("Space")) dy += speed * dt;
-  if (Input.isKeyDown("ControlLeft") || Input.isKeyDown("ControlRight")) dy -= speed * dt;
-  if (dx || dy || dz) camera.move(dx, dy, dz);
+  if (Input.consumeKeyPress("KeyF")) player.toggleFly();
+
+  player.update(dt);
 
   // ---- Render ----
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -235,13 +227,5 @@ function frame(now) {
 
   requestAnimationFrame(frame);
 }
-
-// Spawn the camera above the world center.
-camera.position[0] = 0;
-camera.position[1] = 18;
-camera.position[2] = 0;
-camera.yaw = -Math.PI / 2;
-camera.pitch = -0.5;
-camera._dirty = true;
 
 requestAnimationFrame(frame);

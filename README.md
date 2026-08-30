@@ -1,5 +1,7 @@
 # voxelville
 
+# MiniMax M3 (free) OpenRouter
+
 Create a highly detailed design doc for a Minecraft clone game. Specify as many features as possible, but only ones that are in the real Minecraft. Tech stack will be html/css/js with no external dependencies. Write the design to design.md.
 
 Now create a plan to implement a playable game with a minimal amount of features. White the plan to plan.md.
@@ -17,3 +19,7 @@ Implement Phase 3.
 Implement Phase 4.
 
 Implement Phase 5.
+
+*** 100K context size. Insufficent balance ***
+
+Review design.md and then plan.md. Implement Phase 6.
