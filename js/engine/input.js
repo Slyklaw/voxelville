@@ -8,6 +8,7 @@ let mouseLeftDown = false;
 let mouseRightDown = false;
 let mouseLeftClicked = false;
 let mouseRightClicked = false;
+let wheelDelta = 0;
 
 let onLockChange = null;
 let onLockError = null;
@@ -56,6 +57,12 @@ export const Input = {
   },
   isMouseRightDown() {
     return mouseRightDown;
+  },
+
+  consumeWheel() {
+    const v = wheelDelta;
+    wheelDelta = 0;
+    return v;
   },
 
   requestPointerLock(el) {
@@ -114,4 +121,11 @@ export function attachInput(targetEl) {
     if (e.button === 2) mouseRightDown = false;
   });
   targetEl.addEventListener("contextmenu", (e) => e.preventDefault());
+
+  targetEl.addEventListener("wheel", (e) => {
+    // Normalize to a ±1 step so high-resolution wheels don't skip slots.
+    if (e.deltaY > 0) wheelDelta += 1;
+    else if (e.deltaY < 0) wheelDelta -= 1;
+    e.preventDefault();
+  }, { passive: false });
 }

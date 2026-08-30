@@ -4,11 +4,13 @@ import { createBuffer, createTexture2D } from "./engine/texture.js";
 import { Camera } from "./engine/camera.js";
 import { Input, attachInput } from "./engine/input.js";
 import { buildAtlas } from "./engine/atlas.js";
-import { ATLAS_SIZE } from "./world/block.js";
+import { ATLAS_SIZE, BLOCKS, isBlockSolid } from "./world/block.js";
 import { World } from "./world/world.js";
 import { CHUNK_SIZE } from "./world/chunk.js";
 import { buildChunkMesh } from "./world/blockmesh.js";
 import { Player } from "./entity/player.js";
+import { raycastBlock } from "./physics/raycast.js";
+import { HUD } from "./ui/hud.js";
 
 const canvas = document.getElementById("gl");
 const { gl, isWebGL2 } = createGL(canvas);
@@ -87,6 +89,50 @@ const skyVbo = createBuffer(gl, gl.ARRAY_BUFFER, new Float32Array([
   -1, -1,  1,  1, -1,  1,
 ]));
 
+// ---------- Line shader (selection box) ----------
+const lineVertSrc = `#version 300 es
+in vec3 a_pos;
+uniform mat4 u_mvp;
+void main() {
+  gl_Position = u_mvp * vec4(a_pos, 1.0);
+}
+`;
+const lineFragSrc = `#version 300 es
+precision highp float;
+out vec4 outColor;
+uniform vec3 u_color;
+void main() {
+  outColor = vec4(u_color, 1.0);
+}
+`;
+const lineProg = build(gl, lineVertSrc, lineFragSrc);
+const lineLocs = {
+  attribs: attributes(gl, lineProg, ["a_pos"]),
+  uniforms: uniforms(gl, lineProg, ["u_mvp", "u_color"]),
+};
+
+// 12 edges of a unit cube as 24 vertices (so each endpoint is its own vertex
+// and gl.LINES connects them).
+function makeSelectionBoxLines(size) {
+  const s = size * 0.5;
+  return new Float32Array([
+    -s, -s, -s,   s, -s, -s,
+     s, -s, -s,   s, -s,  s,
+     s, -s,  s,  -s, -s,  s,
+    -s, -s,  s,  -s, -s, -s,
+    -s,  s, -s,   s,  s, -s,
+     s,  s, -s,   s,  s,  s,
+     s,  s,  s,  -s,  s,  s,
+    -s,  s,  s,  -s,  s, -s,
+    -s, -s, -s,  -s,  s, -s,
+     s, -s, -s,   s,  s, -s,
+     s, -s,  s,   s,  s,  s,
+    -s, -s,  s,  -s,  s,  s,
+  ]);
+}
+const selectionVbo = createBuffer(gl, gl.ARRAY_BUFFER, makeSelectionBoxLines(1.01), gl.DYNAMIC_DRAW);
+const SELECTION_INDICES = 24;
+
 // ---------- World + lighting ----------
 const world = new World(1337);
 const RENDER_RADIUS = 4; // 4-chunk radius = 8x8 area = 128x128 blocks
@@ -116,7 +162,6 @@ const chunkGl = new Map(); // key -> { vbo, ibo, indexCount, dirty }
 function rebuildChunkMesh(key) {
   const chunk = world.chunks.get(key);
   if (!chunk) return;
-  const [cs, cz] = key.split(",").map(Number);
   const mesh = buildChunkMesh(chunk, (x, y, z) => {
     if (y < 0) return 0;
     return world.getBlock(x, y, z);
@@ -136,12 +181,76 @@ function rebuildChunkMesh(key) {
   console.log(`[voxelville] chunk ${key} rebuilt: ${mesh.indexCount / 6} quads, ${mesh.positions.length / 8} verts`);
 }
 
+function rebuildAround(x, y, z) {
+  const cx = Math.floor(x / CHUNK_SIZE);
+  const cz = Math.floor(z / CHUNK_SIZE);
+  const lx = x - cx * CHUNK_SIZE;
+  const lz = z - cz * CHUNK_SIZE;
+  // The chunk holding the block, plus any neighbor that shares a boundary
+  // face (because the face-culling depends on the block on the other side).
+  const keys = [`${cx},${cz}`];
+  if (lx === 0)              keys.push(`${cx - 1},${cz}`);
+  if (lx === CHUNK_SIZE - 1) keys.push(`${cx + 1},${cz}`);
+  if (lz === 0)              keys.push(`${cx},${cz - 1}`);
+  if (lz === CHUNK_SIZE - 1) keys.push(`${cx},${cz + 1}`);
+  for (const k of keys) rebuildChunkMesh(k);
+}
+
 for (const key of world.chunks.keys()) {
   rebuildChunkMesh(key);
 }
 
 const totalQuads = [...chunkGl.values()].reduce((s, e) => s + e.indexCount / 6, 0);
 console.log(`[voxelville] world generated: ${world.chunks.size} chunks, ${totalQuads} quads`);
+
+// ---------- HUD ----------
+const hudCanvas = document.getElementById("hud-canvas");
+const hud = new HUD(hudCanvas, atlasPixels);
+
+// ---------- Block interaction ----------
+const PICK_REACH = 5.0;
+const PLACE_REACH = 5.0;
+
+function aabbIntersectsBlock(box, bx, by, bz) {
+  return (
+    box.x < bx + 1 &&
+    box.x + box.w > bx &&
+    box.y < by + 1 &&
+    box.y + box.h > by &&
+    box.z < bz + 1 &&
+    box.z + box.d > bz
+  );
+}
+
+function tryBreak() {
+  const origin = camera.position;
+  const dir = camera.forward(new Float32Array(3));
+  const hit = raycastBlock((x, y, z) => world.getBlock(x, y, z), origin, dir, PICK_REACH);
+  if (!hit.hit || hit.t < 0.01) return;
+  const id = world.getBlock(hit.x, hit.y, hit.z);
+  if (id === 0) return;
+  if (!isBlockSolid(id)) return; // can't break water/etc yet
+  world.setBlock(hit.x, hit.y, hit.z, 0);
+  rebuildAround(hit.x, hit.y, hit.z);
+  console.log(`[voxelville] broke block ${id} at (${hit.x}, ${hit.y}, ${hit.z})`);
+}
+
+function tryPlace() {
+  const origin = camera.position;
+  const dir = camera.forward(new Float32Array(3));
+  const hit = raycastBlock((x, y, z) => world.getBlock(x, y, z), origin, dir, PLACE_REACH);
+  if (!hit.hit || hit.t < 0.01) return;
+  const px = hit.x + hit.nx;
+  const py = hit.y + hit.ny;
+  const pz = hit.z + hit.nz;
+  if (world.getBlock(px, py, pz) !== 0) return;
+  const blockId = hud.getSelectedBlock();
+  if (!blockId) return;
+  if (aabbIntersectsBlock(player.box, px, py, pz)) return;
+  world.setBlock(px, py, pz, blockId);
+  rebuildAround(px, py, pz);
+  console.log(`[voxelville] placed block ${blockId} at (${px}, ${py}, ${pz})`);
+}
 
 // ---------- GL state ----------
 gl.clearColor(0.5, 0.7, 1.0, 1.0);
@@ -179,7 +288,26 @@ function frame(now) {
 
   if (Input.consumeKeyPress("KeyF")) player.toggleFly();
 
+  // Hotbar: 1..9 to pick a slot, mouse wheel to cycle.
+  for (let i = 0; i < 9; i++) {
+    if (Input.consumeKeyPress("Digit" + (i + 1))) hud.setSlot(i);
+  }
+  for (let i = 0; i < 9; i++) {
+    if (Input.consumeKeyPress("Numpad" + (i + 1))) hud.setSlot(i);
+  }
+  const wheel = Input.consumeWheel();
+  if (wheel !== 0) hud.cycleSlot(-Math.sign(wheel));
+
+  // Block break / place.
+  if (Input.consumeMouseLeft())  tryBreak();
+  if (Input.consumeMouseRight()) tryPlace();
+
   player.update(dt);
+
+  // Raycast once per frame for the selection box.
+  const selOrigin = camera.position;
+  const selDir = camera.forward(new Float32Array(3));
+  const selHit = raycastBlock((x, y, z) => world.getBlock(x, y, z), selOrigin, selDir, PICK_REACH);
 
   // ---- Render ----
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
@@ -213,6 +341,44 @@ function frame(now) {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entry.ibo);
     gl.drawElements(gl.TRIANGLES, entry.indexCount, gl.UNSIGNED_SHORT, 0);
   }
+
+  // Selection box (wireframe outline of the targeted block).
+  if (selHit.hit && selHit.t > 0.01) {
+    gl.useProgram(lineProg);
+    const mvp = camera.getViewProj();
+    gl.uniformMatrix4fv(lineLocs.uniforms.u_mvp, false, mvp);
+    gl.uniform3f(lineLocs.uniforms.u_color, 0.0, 0.0, 0.0);
+    gl.bindBuffer(gl.ARRAY_BUFFER, selectionVbo);
+    gl.enableVertexAttribArray(lineLocs.attribs.a_pos);
+    gl.vertexAttribPointer(lineLocs.attribs.a_pos, 3, gl.FLOAT, false, 0, 0);
+    gl.lineWidth(2.0);
+    // Slightly translate outward along the camera-to-block axis to avoid
+    // z-fighting with the block faces themselves.
+    const cx = selHit.x + 0.5, cy = selHit.y + 0.5, cz = selHit.z + 0.5;
+    const ox = selOrigin[0] - cx, oy = selOrigin[1] - cy, oz = selOrigin[2] - cz;
+    const olen = Math.hypot(ox, oy, oz) || 1;
+    const offset = 0.001;
+    const tx = cx + (ox / olen) * offset;
+    const ty = cy + (oy / olen) * offset;
+    const tz = cz + (oz / olen) * offset;
+    // Translate the model by composing T on the right of MVP. Only the
+    // translation column (indices 12..15) changes:
+    //   m_new[12..15] = mvp[0..3]*tx + mvp[4..7]*ty + mvp[8..11]*tz + mvp[12..15]
+    const m = new Float32Array(16);
+    for (let i = 0; i < 4; i++) {
+      m[i]      = mvp[i];
+      m[4 + i]  = mvp[4 + i];
+      m[8 + i]  = mvp[8 + i];
+      m[12 + i] = mvp[i] * tx + mvp[4 + i] * ty + mvp[8 + i] * tz + mvp[12 + i];
+    }
+    gl.uniformMatrix4fv(lineLocs.uniforms.u_mvp, false, m);
+    gl.drawArrays(gl.LINES, 0, SELECTION_INDICES);
+    gl.lineWidth(1.0);
+    gl.disableVertexAttribArray(lineLocs.attribs.a_pos);
+  }
+
+  // HUD (2D overlay).
+  hud.draw();
 
   fpsAccum += dt;
   fpsFrames += 1;
