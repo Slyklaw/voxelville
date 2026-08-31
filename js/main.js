@@ -159,7 +159,11 @@ const faceLight = faceNormals.map((n) => {
 // For each loaded chunk, build (or rebuild) two VBOs/IBOs: opaque and
 // transparent. The renderer draws opaque first, then transparent with alpha
 // blending and depth writes off, sorted back-to-front.
-const chunkGl = new Map(); // key -> { cx, cz, opaque:{vbo,ibo,indexCount}, transparent:{vbo,ibo,indexCount}, dirty }
+//
+// Chunks mark themselves dirty when a block changes (Chunk.set /
+// World.setBlock). The per-frame rebuildDirtyChunks() loop picks those up,
+// also rebuilding boundary neighbors whose faces face the dirty chunk.
+const chunkGl = new Map(); // key -> { cx, cz, opaque:{vbo,ibo,indexCount}, transparent:{vbo,ibo,indexCount} }
 
 function rebuildChunkMesh(key) {
   const chunk = world.chunks.get(key);
@@ -176,7 +180,6 @@ function rebuildChunkMesh(key) {
       cz: chunk.cz,
       opaque: { vbo: gl.createBuffer(), ibo: gl.createBuffer(), indexCount: 0 },
       transparent: { vbo: gl.createBuffer(), ibo: gl.createBuffer(), indexCount: 0 },
-      dirty: false,
     };
     chunkGl.set(key, entry);
   }
@@ -193,27 +196,33 @@ function rebuildChunkMesh(key) {
   gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.transparent.indices, gl.STATIC_DRAW);
   entry.transparent.indexCount = mesh.transparent.indexCount;
 
-  entry.dirty = false;
-  console.log(
-    `[voxelville] chunk ${key} rebuilt: ` +
-    `opaque ${mesh.opaque.indexCount / 6} quads, ` +
-    `transparent ${mesh.transparent.indexCount / 6} quads`
-  );
+  chunk.dirty = false;
 }
 
-function rebuildAround(x, y, z) {
-  const cx = Math.floor(x / CHUNK_SIZE);
-  const cz = Math.floor(z / CHUNK_SIZE);
-  const lx = x - cx * CHUNK_SIZE;
-  const lz = z - cz * CHUNK_SIZE;
-  // The chunk holding the block, plus any neighbor that shares a boundary
-  // face (because the face-culling depends on the block on the other side).
-  const keys = [`${cx},${cz}`];
-  if (lx === 0)              keys.push(`${cx - 1},${cz}`);
-  if (lx === CHUNK_SIZE - 1) keys.push(`${cx + 1},${cz}`);
-  if (lz === 0)              keys.push(`${cx},${cz - 1}`);
-  if (lz === CHUNK_SIZE - 1) keys.push(`${cx},${cz + 1}`);
-  for (const k of keys) rebuildChunkMesh(k);
+// Find chunks that need a rebuild: any chunk flagged dirty, plus any loaded
+// chunk that shares a chunk boundary with a dirty chunk (its faces on that
+// boundary depend on the neighbor's state and must be re-evaluated).
+function rebuildDirtyChunks() {
+  const dirtyKeys = [];
+  for (const [key, chunk] of world.chunks) {
+    if (chunk.dirty) dirtyKeys.push(key);
+  }
+  if (dirtyKeys.length === 0) return;
+
+  const toRebuild = new Set(dirtyKeys);
+  for (const key of dirtyKeys) {
+    const [cx, cz] = key.split(",").map(Number);
+    const neighbors = [
+      `${cx - 1},${cz}`,
+      `${cx + 1},${cz}`,
+      `${cx},${cz - 1}`,
+      `${cx},${cz + 1}`,
+    ];
+    for (const n of neighbors) {
+      if (world.chunks.has(n)) toRebuild.add(n);
+    }
+  }
+  for (const key of toRebuild) rebuildChunkMesh(key);
 }
 
 for (const key of world.chunks.keys()) {
@@ -254,7 +263,6 @@ function tryBreak() {
   if (id === 0) return;
   if (!isBlockSolid(id)) return; // can't break water/etc yet
   world.setBlock(hit.x, hit.y, hit.z, 0);
-  rebuildAround(hit.x, hit.y, hit.z);
   console.log(`[voxelville] broke block ${id} at (${hit.x}, ${hit.y}, ${hit.z})`);
 }
 
@@ -271,7 +279,6 @@ function tryPlace() {
   if (!blockId) return;
   if (aabbIntersectsBlock(player.box, px, py, pz)) return;
   world.setBlock(px, py, pz, blockId);
-  rebuildAround(px, py, pz);
   console.log(`[voxelville] placed block ${blockId} at (${px}, ${py}, ${pz})`);
 }
 
@@ -326,6 +333,7 @@ function frame(now) {
   if (Input.consumeMouseRight()) tryPlace();
 
   player.update(dt);
+  rebuildDirtyChunks();
 
   // Raycast once per frame for the selection box.
   const selOrigin = camera.position;

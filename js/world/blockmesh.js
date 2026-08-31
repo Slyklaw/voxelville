@@ -1,4 +1,4 @@
-import { BLOCKS, TILE, isBlockOpaque } from "./block.js";
+import { BLOCKS } from "./block.js";
 import { tileUV } from "../engine/atlas.js";
 
 // Face order: +x, -x, +y, -y, +z, -z
