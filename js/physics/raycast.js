@@ -23,19 +23,24 @@ export function raycastBlock(getBlock, origin, dir, maxDist) {
   const stepY = dy > EPS ? 1 : dy < -EPS ? -1 : 0;
   const stepZ = dz > EPS ? 1 : dz < -EPS ? -1 : 0;
 
-  // tMaxX/Y/Z: distance along the ray to the next integer plane on each axis.
+  // tMaxX/Y/Z: signed distance along the ray to the next integer plane on each
+  // axis. tDeltaX/Y/Z: positive step distance along the ray to advance one full
+  // cell on each axis.
   const tDeltaX = stepX !== 0 ? Math.abs(1 / dx) : Infinity;
   const tDeltaY = stepY !== 0 ? Math.abs(1 / dy) : Infinity;
   const tDeltaZ = stepZ !== 0 ? Math.abs(1 / dz) : Infinity;
 
+  // Initial tMax is the signed distance to the first boundary in the step
+  // direction. For stepX=+1 the boundary is at ix+1; for stepX=-1 it is at ix.
+  // (boundary - ox) and dx have the same sign, so the quotient is non-negative.
   let tMaxX = stepX !== 0
-    ? ((stepX > 0 ? (ix + 1) : ix) - ox) * tDeltaX
+    ? ((stepX > 0 ? (ix + 1) : ix) - ox) / dx
     : Infinity;
   let tMaxY = stepY !== 0
-    ? ((stepY > 0 ? (iy + 1) : iy) - oy) * tDeltaY
+    ? ((stepY > 0 ? (iy + 1) : iy) - oy) / dy
     : Infinity;
   let tMaxZ = stepZ !== 0
-    ? ((stepZ > 0 ? (iz + 1) : iz) - oz) * tDeltaZ
+    ? ((stepZ > 0 ? (iz + 1) : iz) - oz) / dz
     : Infinity;
 
   let nx = 0, ny = 0, nz = 0;
