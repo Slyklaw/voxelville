@@ -27,3 +27,11 @@ Review design.md and then plan.md. Implement Phase 6.
 Invert the lookUp/Down camera movement. Pushing the mouse forward should look up, etc.
 
 Implement Phase 7.
+
+reverse the mousewheel for hotbar selection
+
+the black wireframe is not aligned with actual block positions
+
+Review design.md and plan.md and screenshot.png. the wireframe is in the wrong location, and the crosshair is not selecting the correct block.
+
+excellent, the wireframe is correct and clicking the mouse deletes the block that is highlighted as expected

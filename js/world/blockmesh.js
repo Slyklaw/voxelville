@@ -52,9 +52,9 @@ export function buildBlockFaces(blockId, x, y, z, light, baseVertex) {
       const v = face.v[i];
       const uv = face.uv[i];
       const o = vOff * FLOATS_PER_VERT;
-      positions[o + 0] = x + v[0];
-      positions[o + 1] = y + v[1];
-      positions[o + 2] = z + v[2];
+      positions[o + 0] = x + 0.5 + v[0];
+      positions[o + 1] = y + 0.5 + v[1];
+      positions[o + 2] = z + 0.5 + v[2];
       // Atlas V=0 is the top of the source image; face "top" (uv.y=1) should sample the top.
       positions[o + 3] = uv[0] === 0 ? u0 : u1;
       positions[o + 4] = uv[1] === 0 ? v1 : v0;
@@ -131,7 +131,7 @@ export function buildChunkMesh(chunk, getNeighborBlock, light) {
           for (let i = 0; i < 4; i++) {
             const v = face.v[i];
             const uv = face.uv[i];
-            positions.push(wx + v[0], wy + v[1], wz + v[2]);
+            positions.push(wx + 0.5 + v[0], wy + 0.5 + v[1], wz + 0.5 + v[2]);
             positions.push(uv[0] === 0 ? u0 : u1);
             positions.push(uv[1] === 0 ? v1 : v0);
             positions.push(lr, lg, lb);

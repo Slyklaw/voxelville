@@ -130,7 +130,7 @@ function makeSelectionBoxLines(size) {
     -s, -s,  s,  -s,  s,  s,
   ]);
 }
-const selectionVbo = createBuffer(gl, gl.ARRAY_BUFFER, makeSelectionBoxLines(1.01), gl.DYNAMIC_DRAW);
+const selectionVbo = createBuffer(gl, gl.ARRAY_BUFFER, makeSelectionBoxLines(1.0), gl.DYNAMIC_DRAW);
 const SELECTION_INDICES = 24;
 
 // ---------- World + lighting ----------
@@ -296,7 +296,7 @@ function frame(now) {
     if (Input.consumeKeyPress("Numpad" + (i + 1))) hud.setSlot(i);
   }
   const wheel = Input.consumeWheel();
-  if (wheel !== 0) hud.cycleSlot(-Math.sign(wheel));
+  if (wheel !== 0) hud.cycleSlot(Math.sign(wheel));
 
   // Block break / place.
   if (Input.consumeMouseLeft())  tryBreak();
@@ -346,24 +346,20 @@ function frame(now) {
   if (selHit.hit && selHit.t > 0.01) {
     gl.useProgram(lineProg);
     const mvp = camera.getViewProj();
-    gl.uniformMatrix4fv(lineLocs.uniforms.u_mvp, false, mvp);
     gl.uniform3f(lineLocs.uniforms.u_color, 0.0, 0.0, 0.0);
     gl.bindBuffer(gl.ARRAY_BUFFER, selectionVbo);
     gl.enableVertexAttribArray(lineLocs.attribs.a_pos);
     gl.vertexAttribPointer(lineLocs.attribs.a_pos, 3, gl.FLOAT, false, 0, 0);
     gl.lineWidth(2.0);
-    // Slightly translate outward along the camera-to-block axis to avoid
-    // z-fighting with the block faces themselves.
+    // Snap the wireframe to the exact block bounds (centered at
+    // selHit + 0.5) and push it outward along the face normal so the
+    // back edges of the box don't z-fight with the block's back faces.
     const cx = selHit.x + 0.5, cy = selHit.y + 0.5, cz = selHit.z + 0.5;
-    const ox = selOrigin[0] - cx, oy = selOrigin[1] - cy, oz = selOrigin[2] - cz;
-    const olen = Math.hypot(ox, oy, oz) || 1;
-    const offset = 0.001;
-    const tx = cx + (ox / olen) * offset;
-    const ty = cy + (oy / olen) * offset;
-    const tz = cz + (oz / olen) * offset;
-    // Translate the model by composing T on the right of MVP. Only the
-    // translation column (indices 12..15) changes:
-    //   m_new[12..15] = mvp[0..3]*tx + mvp[4..7]*ty + mvp[8..11]*tz + mvp[12..15]
+    const offset = 0.005;
+    const tx = cx + selHit.nx * offset;
+    const ty = cy + selHit.ny * offset;
+    const tz = cz + selHit.nz * offset;
+    // m_new = mvp * T(tx,ty,tz). Only the translation column changes.
     const m = new Float32Array(16);
     for (let i = 0; i < 4; i++) {
       m[i]      = mvp[i];
