@@ -92,13 +92,19 @@ function shouldDrawFace(selfId, neighborId) {
   return !self.isOpaque || !neigh.isOpaque;
 }
 
-// Build a chunk's mesh in one pass. cullFaces is a callback (x,y,z,face) => boolean.
+// Build a chunk's mesh in one pass, splitting opaque from transparent geometry
+// so the renderer can draw them in separate passes (opaque first with depth
+// writes, transparent second with alpha blending).
+//
 // light is a per-face precomputed diffuse color (single [r,g,b] for the whole chunk for v0.1).
 export function buildChunkMesh(chunk, getNeighborBlock, light) {
   const SIZE = 16;
-  const positions = [];
-  const indices = [];
-  let vertexBase = 0;
+  const opaquePos = [];
+  const opaqueIdx = [];
+  const transPos = [];
+  const transIdx = [];
+  let opaqueBase = 0;
+  let transBase = 0;
 
   for (let lx = 0; lx < SIZE; lx++) {
     for (let y = 0; y < 16; y++) {
@@ -111,6 +117,10 @@ export function buildChunkMesh(chunk, getNeighborBlock, light) {
         const wx = chunk.cx * SIZE + lx;
         const wy = y;
         const wz = chunk.cz * SIZE + lz;
+
+        const positions = block.isTransparent ? transPos : opaquePos;
+        const indices   = block.isTransparent ? transIdx  : opaqueIdx;
+        let base        = block.isTransparent ? transBase : opaqueBase;
 
         for (let f = 0; f < 6; f++) {
           const off = NEIGHBOR_OFFSETS[f];
@@ -136,17 +146,31 @@ export function buildChunkMesh(chunk, getNeighborBlock, light) {
             positions.push(uv[1] === 0 ? v1 : v0);
             positions.push(lr, lg, lb);
           }
-          const start = vertexBase;
-          indices.push(start + 0, start + 1, start + 2, start + 0, start + 2, start + 3);
-          vertexBase += 4;
+          indices.push(base + 0, base + 1, base + 2, base + 0, base + 2, base + 3);
+          base += 4;
         }
+
+        if (block.isTransparent) transBase = base;
+        else                      opaqueBase = base;
       }
     }
   }
 
+  const opaquePositions = new Float32Array(opaquePos);
+  const opaqueIndices   = opaquePos.length === 0 ? new Uint16Array(0) : new Uint16Array(opaqueIdx);
+  const transPositions  = new Float32Array(transPos);
+  const transIndices    = transPos.length === 0 ? new Uint16Array(0) : new Uint16Array(transIdx);
+
   return {
-    positions: new Float32Array(positions),
-    indices: positions.length === 0 ? new Uint16Array(0) : new Uint16Array(indices),
-    indexCount: indices.length,
+    opaque: {
+      positions: opaquePositions,
+      indices: opaqueIndices,
+      indexCount: opaqueIndices.length,
+    },
+    transparent: {
+      positions: transPositions,
+      indices: transIndices,
+      indexCount: transIndices.length,
+    },
   };
 }

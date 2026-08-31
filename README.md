@@ -35,3 +35,5 @@ the black wireframe is not aligned with actual block positions
 Review design.md and plan.md and screenshot.png. the wireframe is in the wrong location, and the crosshair is not selecting the correct block.
 
 excellent, the wireframe is correct and clicking the mouse deletes the block that is highlighted as expected. but the crosshair raycast is not locating the correct block.
+
+Implement Phase 8.

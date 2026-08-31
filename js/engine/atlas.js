@@ -248,6 +248,29 @@ export function buildAtlas() {
         }
       }
     }
+
+    // Alpha pass: carve holes in glass and make water translucent.
+    //   Glass interior pixels (palette index 0) get alpha=0 so the discard in
+    //   the fragment shader leaves a hole; border pixels (palette index 3)
+    //   keep alpha=255 so the frame stays visible.
+    //   Water gets alpha ~0.7 so it reads as a translucent blue surface.
+    if (tile === TILE.GLASS) {
+      const pal = palettes.glass.map(hexToRgb);
+      for (let y = 0; y < TILE_SIZE; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const idx = patterns.glass(x, y, pal);
+          const i = ((oy + y) * ATLAS_SIZE + (ox + x)) * 4;
+          buf[i + 3] = idx === 0 ? 0 : 255;
+        }
+      }
+    } else if (tile === TILE.WATER) {
+      for (let y = 0; y < TILE_SIZE; y++) {
+        for (let x = 0; x < TILE_SIZE; x++) {
+          const i = ((oy + y) * ATLAS_SIZE + (ox + x)) * 4;
+          buf[i + 3] = 178; // ~0.7
+        }
+      }
+    }
   }
 
   return buf;

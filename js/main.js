@@ -53,7 +53,7 @@ uniform sampler2D u_tex;
 void main() {
   vec4 c = texture(u_tex, v_uv);
   if (c.a < 0.5) discard;
-  outColor = vec4(c.rgb * v_light, 1.0);
+  outColor = vec4(c.rgb * v_light, c.a);
 }
 `;
 const blockProg = build(gl, blockVertSrc, blockFragSrc);
@@ -156,8 +156,10 @@ const faceLight = faceNormals.map((n) => {
 });
 
 // ---------- Build chunk meshes ----------
-// For each loaded chunk, build (or rebuild) a VBO/IBO.
-const chunkGl = new Map(); // key -> { vbo, ibo, indexCount, dirty }
+// For each loaded chunk, build (or rebuild) two VBOs/IBOs: opaque and
+// transparent. The renderer draws opaque first, then transparent with alpha
+// blending and depth writes off, sorted back-to-front.
+const chunkGl = new Map(); // key -> { cx, cz, opaque:{vbo,ibo,indexCount}, transparent:{vbo,ibo,indexCount}, dirty }
 
 function rebuildChunkMesh(key) {
   const chunk = world.chunks.get(key);
@@ -169,16 +171,34 @@ function rebuildChunkMesh(key) {
 
   let entry = chunkGl.get(key);
   if (!entry) {
-    entry = { vbo: gl.createBuffer(), ibo: gl.createBuffer(), indexCount: 0, dirty: false };
+    entry = {
+      cx: chunk.cx,
+      cz: chunk.cz,
+      opaque: { vbo: gl.createBuffer(), ibo: gl.createBuffer(), indexCount: 0 },
+      transparent: { vbo: gl.createBuffer(), ibo: gl.createBuffer(), indexCount: 0 },
+      dirty: false,
+    };
     chunkGl.set(key, entry);
   }
-  gl.bindBuffer(gl.ARRAY_BUFFER, entry.vbo);
-  gl.bufferData(gl.ARRAY_BUFFER, mesh.positions, gl.STATIC_DRAW);
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entry.ibo);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.indices, gl.STATIC_DRAW);
-  entry.indexCount = mesh.indexCount;
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, entry.opaque.vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, mesh.opaque.positions, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entry.opaque.ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.opaque.indices, gl.STATIC_DRAW);
+  entry.opaque.indexCount = mesh.opaque.indexCount;
+
+  gl.bindBuffer(gl.ARRAY_BUFFER, entry.transparent.vbo);
+  gl.bufferData(gl.ARRAY_BUFFER, mesh.transparent.positions, gl.STATIC_DRAW);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entry.transparent.ibo);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, mesh.transparent.indices, gl.STATIC_DRAW);
+  entry.transparent.indexCount = mesh.transparent.indexCount;
+
   entry.dirty = false;
-  console.log(`[voxelville] chunk ${key} rebuilt: ${mesh.indexCount / 6} quads, ${mesh.positions.length / 8} verts`);
+  console.log(
+    `[voxelville] chunk ${key} rebuilt: ` +
+    `opaque ${mesh.opaque.indexCount / 6} quads, ` +
+    `transparent ${mesh.transparent.indexCount / 6} quads`
+  );
 }
 
 function rebuildAround(x, y, z) {
@@ -200,7 +220,10 @@ for (const key of world.chunks.keys()) {
   rebuildChunkMesh(key);
 }
 
-const totalQuads = [...chunkGl.values()].reduce((s, e) => s + e.indexCount / 6, 0);
+const totalQuads = [...chunkGl.values()].reduce(
+  (s, e) => s + e.opaque.indexCount / 6 + e.transparent.indexCount / 6,
+  0
+);
 console.log(`[voxelville] world generated: ${world.chunks.size} chunks, ${totalQuads} quads`);
 
 // ---------- HUD ----------
@@ -329,8 +352,7 @@ function frame(now) {
   gl.bindTexture(gl.TEXTURE_2D, atlasTex);
   gl.uniform1i(blockLocs.uniforms.u_tex, 0);
 
-  for (const [, entry] of chunkGl) {
-    if (entry.indexCount === 0) continue;
+  const setChunkAttribs = (entry) => {
     gl.bindBuffer(gl.ARRAY_BUFFER, entry.vbo);
     gl.enableVertexAttribArray(blockLocs.attribs.a_pos);
     gl.vertexAttribPointer(blockLocs.attribs.a_pos, 3, gl.FLOAT, false, 32, 0);
@@ -339,8 +361,44 @@ function frame(now) {
     gl.enableVertexAttribArray(blockLocs.attribs.a_light);
     gl.vertexAttribPointer(blockLocs.attribs.a_light, 3, gl.FLOAT, false, 32, 20);
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entry.ibo);
-    gl.drawElements(gl.TRIANGLES, entry.indexCount, gl.UNSIGNED_SHORT, 0);
+  };
+
+  // Opaque pass: depth test on, depth write on, blending off.
+  gl.disable(gl.BLEND);
+  gl.depthMask(true);
+  for (const [, entry] of chunkGl) {
+    if (entry.opaque.indexCount === 0) continue;
+    setChunkAttribs(entry.opaque);
+    gl.drawElements(gl.TRIANGLES, entry.opaque.indexCount, gl.UNSIGNED_SHORT, 0);
   }
+
+  // Transparent pass: depth test on, depth write off, alpha blending on.
+  // Sort chunk sub-meshes back-to-front by camera distance so alpha blending
+  // composites correctly across chunks.
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.depthMask(false);
+
+  const cp = camera.position;
+  const transparentChunks = [];
+  for (const [, entry] of chunkGl) {
+    if (entry.transparent.indexCount === 0) continue;
+    const ccx = entry.cx * CHUNK_SIZE + CHUNK_SIZE * 0.5;
+    const ccz = entry.cz * CHUNK_SIZE + CHUNK_SIZE * 0.5;
+    const dx = cp[0] - ccx;
+    const dz = cp[2] - ccz;
+    transparentChunks.push({ entry, dist: dx * dx + dz * dz });
+  }
+  transparentChunks.sort((a, b) => b.dist - a.dist);
+
+  for (const { entry } of transparentChunks) {
+    setChunkAttribs(entry.transparent);
+    gl.drawElements(gl.TRIANGLES, entry.transparent.indexCount, gl.UNSIGNED_SHORT, 0);
+  }
+
+  // Restore state for subsequent passes.
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
 
   // Selection box (wireframe outline of the targeted block).
   if (selHit.hit && selHit.t > 0.01) {
