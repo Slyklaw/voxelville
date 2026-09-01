@@ -303,6 +303,8 @@ camera.yaw = -Math.PI / 2;
 camera.pitch = -0.2;
 player.syncCamera();
 
+hud.player = player;
+
 function frame(now) {
   const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;

@@ -18,6 +18,7 @@ export class HUD {
     this.canvas = canvas;
     this.ctx = canvas.getContext("2d");
     this.atlasPixels = atlasPixels;
+    this.player = null;
     this.selectedSlot = 0;
 
     this.icons = new Map();
@@ -78,6 +79,7 @@ export class HUD {
 
     this.drawCrosshair(ctx, w, h);
     this.drawHotbar(ctx, w, h);
+    this.drawStatusText(ctx, w, h);
   }
 
   drawCrosshair(ctx, w, h) {
@@ -137,5 +139,19 @@ export class HUD {
 
   getSelectedBlock() {
     return HOTBAR_BLOCKS[this.selectedSlot];
+  }
+
+  drawStatusText(ctx, w, h) {
+    if (!this.player || !this.player.flying) return;
+    ctx.font = "bold 14px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "top";
+    const text = "Flying: ON";
+    const x = w / 2;
+    const y = 8;
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.fillText(text, x + 1, y + 1);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
+    ctx.fillText(text, x, y);
   }
 }

@@ -41,3 +41,7 @@ Implement Phase 8.
 Implement Phase 9.
 
 Implement Phase 10.
+
+Review design.md and then plan.md. Implement Phase 11.
+
+Implement Phase 12.
