@@ -74,6 +74,19 @@ export class World {
     }
   }
 
+  // Insert a chunk's block data without running the generator. Used when
+  // restoring from a save file. Marks the chunk dirty so its mesh rebuilds.
+  setChunkBlocks(cx, cz, blocks) {
+    const k = this.chunkKey(cx, cz);
+    let c = this.chunks.get(k);
+    if (!c) {
+      c = new Chunk(cx, cz);
+      this.chunks.set(k, c);
+    }
+    c.blocks.set(blocks);
+    c.dirty = true;
+  }
+
   // World-space coords.
   getBlock(x, y, z) {
     if (y < 0 || y >= CHUNK_HEIGHT) return 0;

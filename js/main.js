@@ -11,6 +11,7 @@ import { buildChunkMesh } from "./world/blockmesh.js";
 import { Player } from "./entity/player.js";
 import { raycastBlock } from "./physics/raycast.js";
 import { HUD } from "./ui/hud.js";
+import { saveWorld, loadWorld } from "./storage/save.js";
 
 const canvas = document.getElementById("gl");
 const { gl, isWebGL2 } = createGL(canvas);
@@ -134,9 +135,54 @@ const selectionVbo = createBuffer(gl, gl.ARRAY_BUFFER, makeSelectionBoxLines(1.0
 const SELECTION_INDICES = 24;
 
 // ---------- World + lighting ----------
-const world = new World(1337);
+const DEFAULT_SEED = 1337;
 const RENDER_RADIUS = 4; // 4-chunk radius = 8x8 area = 128x128 blocks
+
+async function buildWorld() {
+  const saved = await loadWorld().catch((err) => {
+    console.warn(`[voxelville] load failed, starting fresh: ${err.message}`);
+    return null;
+  });
+  if (saved) {
+    const world = new World(saved.seed);
+    for (const c of saved.chunks) world.setChunkBlocks(c.cx, c.cz, c.blocks);
+    console.log(`[voxelville] loaded save: seed=${saved.seed}, ${saved.chunks.length} chunks`);
+    return world;
+  }
+  const world = new World(DEFAULT_SEED);
+  console.log(`[voxelville] no save found, generating fresh world with seed ${DEFAULT_SEED}`);
+  return world;
+}
+
+const world = await buildWorld();
 world.ensureChunksAround(0, 0, RENDER_RADIUS);
+
+// Debounced auto-save: any block change schedules a write 500ms later.
+// Repeated changes within the window reset the timer so we only save once the
+// player has stopped modifying the world.
+let saveTimer = null;
+function scheduleAutoSave() {
+  if (saveTimer !== null) clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    saveTimer = null;
+    saveWorld(world).then(
+      () => console.log("[voxelville] auto-saved"),
+      (err) => console.warn(`[voxelville] auto-save failed: ${err.message}`)
+    );
+  }, 500);
+}
+async function manualSave() {
+  if (saveTimer !== null) {
+    clearTimeout(saveTimer);
+    saveTimer = null;
+  }
+  try {
+    await saveWorld(world);
+    console.log("[voxelville] manual save complete");
+  } catch (err) {
+    console.warn(`[voxelville] manual save failed: ${err.message}`);
+  }
+}
 
 const LIGHT_DIR = [0.4, 1.0, 0.3];
 {
@@ -263,6 +309,7 @@ function tryBreak() {
   if (id === 0) return;
   if (!isBlockSolid(id)) return; // can't break water/etc yet
   world.setBlock(hit.x, hit.y, hit.z, 0);
+  scheduleAutoSave();
   console.log(`[voxelville] broke block ${id} at (${hit.x}, ${hit.y}, ${hit.z})`);
 }
 
@@ -279,6 +326,7 @@ function tryPlace() {
   if (!blockId) return;
   if (aabbIntersectsBlock(player.box, px, py, pz)) return;
   world.setBlock(px, py, pz, blockId);
+  scheduleAutoSave();
   console.log(`[voxelville] placed block ${blockId} at (${px}, ${py}, ${pz})`);
 }
 
@@ -319,6 +367,7 @@ function frame(now) {
   Input.resetMouseDelta();
 
   if (Input.consumeKeyPress("KeyF")) player.toggleFly();
+  if (Input.consumeKeyPress("F2")) manualSave();
 
   // Hotbar: 1..9 to pick a slot, mouse wheel to cycle.
   for (let i = 0; i < 9; i++) {
