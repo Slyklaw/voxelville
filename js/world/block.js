@@ -42,7 +42,7 @@ export const BLOCKS = {
   8: { name: "leaves", isSolid: true, isOpaque: true, isTransparent: false, faces: [TILE.LEAVES, TILE.LEAVES, TILE.LEAVES, TILE.LEAVES, TILE.LEAVES, TILE.LEAVES] },
   9: { name: "glass", isSolid: true, isOpaque: false, isTransparent: true, faces: [TILE.GLASS, TILE.GLASS, TILE.GLASS, TILE.GLASS, TILE.GLASS, TILE.GLASS] },
   10: { name: "cobblestone", isSolid: true, isOpaque: true, isTransparent: false, faces: [TILE.COBBLESTONE, TILE.COBBLESTONE, TILE.COBBLESTONE, TILE.COBBLESTONE, TILE.COBBLESTONE, TILE.COBBLESTONE] },
-  11: { name: "bedrock", isSolid: true, isOpaque: true, isTransparent: false, faces: [TILE.BEDROCK, TILE.BEDROCK, TILE.BEDROCK, TILE.BEDROCK, TILE.BEDROCK, TILE.BEDROCK] },
+  11: { name: "bedrock", isSolid: true, isOpaque: true, isTransparent: false, unbreakable: true, faces: [TILE.BEDROCK, TILE.BEDROCK, TILE.BEDROCK, TILE.BEDROCK, TILE.BEDROCK, TILE.BEDROCK] },
 };
 
 export function isBlockSolid(id) {
@@ -56,4 +56,8 @@ export function isBlockOpaque(id) {
 export function isBlockTransparent(id) {
   const b = BLOCKS[id];
   return b ? b.isTransparent : false;
+}
+export function isBlockUnbreakable(id) {
+  const b = BLOCKS[id];
+  return b ? !!b.unbreakable : false;
 }

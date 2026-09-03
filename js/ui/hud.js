@@ -20,6 +20,7 @@ export class HUD {
     this.atlasPixels = atlasPixels;
     this.player = null;
     this.selectedSlot = 0;
+    this.hoveredSlot = -1; // -1 = not over any slot
 
     this.icons = new Map();
     for (const id of HOTBAR_BLOCKS) {
@@ -29,6 +30,34 @@ export class HUD {
       const tile = block.faces[2] >= 0 ? block.faces[2] : block.faces[0];
       this.icons.set(id, this.buildIcon(tile));
     }
+
+    // Track which hotbar slot the mouse is over. Pointer lock steals normal
+    // mouse events, so we ignore them in that case.
+    window.addEventListener("mousemove", (e) => {
+      if (document.pointerLockElement) {
+        this.hoveredSlot = -1;
+        return;
+      }
+      this.hoveredSlot = this.slotAt(e.clientX, e.clientY);
+    });
+  }
+
+  // Return the slot index under (x, y), or -1 if outside the hotbar.
+  slotAt(x, y) {
+    const w = this.canvas.clientWidth;
+    const h = this.canvas.clientHeight;
+    const totalW = HOTBAR_BLOCKS.length * SLOT_PX + (HOTBAR_BLOCKS.length - 1) * SLOT_GAP;
+    const x0 = Math.floor((w - totalW) / 2);
+    const y0 = h - HOTBAR_BOTTOM - SLOT_PX;
+    if (y < y0 || y >= y0 + SLOT_PX) return -1;
+    if (x < x0 || x >= x0 + totalW) return -1;
+    const rel = x - x0;
+    const slotStride = SLOT_PX + SLOT_GAP;
+    let i = Math.floor(rel / slotStride);
+    if (i >= HOTBAR_BLOCKS.length) return -1;
+    // Reject clicks in the inter-slot gap.
+    if (rel - i * slotStride >= SLOT_PX) return -1;
+    return i;
   }
 
   buildIcon(tileIndex) {
@@ -79,6 +108,7 @@ export class HUD {
 
     this.drawCrosshair(ctx, w, h);
     this.drawHotbar(ctx, w, h);
+    this.drawTooltip(ctx, w, h);
     this.drawStatusText(ctx, w, h);
   }
 
@@ -153,5 +183,38 @@ export class HUD {
     ctx.fillText(text, x + 1, y + 1);
     ctx.fillStyle = "rgba(255, 255, 255, 0.9)";
     ctx.fillText(text, x, y);
+  }
+
+  drawTooltip(ctx, w, h) {
+    if (this.hoveredSlot < 0) return;
+    const id = HOTBAR_BLOCKS[this.hoveredSlot];
+    const block = BLOCKS[id];
+    if (!block) return;
+    const label = block.name;
+
+    // Slot geometry for positioning.
+    const totalW = HOTBAR_BLOCKS.length * SLOT_PX + (HOTBAR_BLOCKS.length - 1) * SLOT_GAP;
+    const x0 = Math.floor((w - totalW) / 2);
+    const y0 = h - HOTBAR_BOTTOM - SLOT_PX;
+
+    ctx.font = "bold 13px sans-serif";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "bottom";
+    const text = label.charAt(0).toUpperCase() + label.slice(1);
+    const padding = 6;
+    const metrics = ctx.measureText(text);
+    const boxW = metrics.width + padding * 2;
+    const boxH = 18;
+    const slotCx = x0 + this.hoveredSlot * (SLOT_PX + SLOT_GAP) + SLOT_PX * 0.5;
+    const boxX = Math.max(2, Math.min(w - boxW - 2, slotCx - boxW * 0.5));
+    const boxY = y0 - boxH - 4;
+
+    ctx.fillStyle = "rgba(16, 16, 16, 0.85)";
+    ctx.fillRect(boxX, boxY, boxW, boxH);
+    ctx.strokeStyle = "rgba(255, 255, 255, 0.6)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(boxX + 0.5, boxY + 0.5, boxW - 1, boxH - 1);
+    ctx.fillStyle = "rgba(255, 255, 255, 1.0)";
+    ctx.fillText(text, slotCx, boxY + boxH - 3);
   }
 }

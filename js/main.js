@@ -4,7 +4,7 @@ import { createBuffer, createTexture2D } from "./engine/texture.js";
 import { Camera } from "./engine/camera.js";
 import { Input, attachInput } from "./engine/input.js";
 import { buildAtlas } from "./engine/atlas.js";
-import { ATLAS_SIZE, BLOCKS, isBlockSolid } from "./world/block.js";
+import { ATLAS_SIZE, BLOCKS, isBlockSolid, isBlockUnbreakable } from "./world/block.js";
 import { World } from "./world/world.js";
 import { CHUNK_SIZE } from "./world/chunk.js";
 import { buildChunkMesh } from "./world/blockmesh.js";
@@ -308,6 +308,7 @@ function tryBreak() {
   const id = world.getBlock(hit.x, hit.y, hit.z);
   if (id === 0) return;
   if (!isBlockSolid(id)) return; // can't break water/etc yet
+  if (isBlockUnbreakable(id)) return; // bedrock floor is permanent in v0.1
   world.setBlock(hit.x, hit.y, hit.z, 0);
   scheduleAutoSave();
   console.log(`[voxelville] broke block ${id} at (${hit.x}, ${hit.y}, ${hit.z})`);
