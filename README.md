@@ -42,6 +42,8 @@ Implement Phase 9.
 
 Implement Phase 10.
 
+Fresh session:
+
 Review design.md and then plan.md. Implement Phase 11.
 
 Implement Phase 12.
@@ -49,3 +51,9 @@ Implement Phase 12.
 Implement Phase 13.
 
 Implement Phase 14.
+
+Fresh session:
+
+Review design.md and then plan.md. Implement Phase 15.
+
+Implement Phase 16.

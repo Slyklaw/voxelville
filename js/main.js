@@ -4,7 +4,7 @@ import { createBuffer, createTexture2D } from "./engine/texture.js";
 import { Camera } from "./engine/camera.js";
 import { Input, attachInput } from "./engine/input.js";
 import { buildAtlas } from "./engine/atlas.js";
-import { ATLAS_SIZE, BLOCKS, isBlockSolid, isBlockUnbreakable } from "./world/block.js";
+import { ATLAS_SIZE, TILE_SIZE, ATLAS_GRID, BLOCKS, isBlockSolid, isBlockUnbreakable } from "./world/block.js";
 import { World } from "./world/world.js";
 import { CHUNK_SIZE } from "./world/chunk.js";
 import { buildChunkMesh } from "./world/blockmesh.js";
@@ -12,6 +12,8 @@ import { Player } from "./entity/player.js";
 import { raycastBlock } from "./physics/raycast.js";
 import { HUD } from "./ui/hud.js";
 import { saveWorld, loadWorld } from "./storage/save.js";
+import { ParticleSystem } from "./engine/particles.js";
+import { Hand } from "./entity/hand.js";
 
 const canvas = document.getElementById("gl");
 const { gl, isWebGL2 } = createGL(canvas);
@@ -112,6 +114,38 @@ const lineLocs = {
   uniforms: uniforms(gl, lineProg, ["u_mvp", "u_color"]),
 };
 
+// ---------- Particle shader (instanced billboarded quads) ----------
+// Each instance has a world position and a color (with per-particle alpha so
+// we can fade as the puff ages); the base quad (a 2D corner in {-0.5,+0.5}²)
+// is scaled by u_size and projected to clip space directly (no view rotation —
+// particles face the camera as a flat plane).
+const particleVertSrc = `#version 300 es
+in vec2 a_corner;
+in vec3 a_instancePos;
+in vec4 a_instanceColor;
+uniform mat4 u_mvp;
+uniform float u_size;
+out vec4 v_color;
+void main() {
+  vec3 worldPos = a_instancePos + vec3(a_corner * u_size, 0.0);
+  gl_Position = u_mvp * vec4(worldPos, 1.0);
+  v_color = a_instanceColor;
+}
+`;
+const particleFragSrc = `#version 300 es
+precision highp float;
+in vec4 v_color;
+out vec4 outColor;
+void main() {
+  outColor = v_color;
+}
+`;
+const particleProg = build(gl, particleVertSrc, particleFragSrc);
+const particleLocs = {
+  attribs: attributes(gl, particleProg, ["a_corner", "a_instancePos", "a_instanceColor"]),
+  uniforms: uniforms(gl, particleProg, ["u_mvp", "u_size"]),
+};
+
 // 12 edges of a unit cube as 24 vertices (so each endpoint is its own vertex
 // and gl.LINES connects them).
 function makeSelectionBoxLines(size) {
@@ -133,6 +167,57 @@ function makeSelectionBoxLines(size) {
 }
 const selectionVbo = createBuffer(gl, gl.ARRAY_BUFFER, makeSelectionBoxLines(1.0), gl.DYNAMIC_DRAW);
 const SELECTION_INDICES = 24;
+
+// ---------- Particle system ----------
+// Pools 256 billboarded quads. Tinted with the broken block's face color so
+// the puff visually matches what the player just destroyed.
+const particles = new ParticleSystem();
+particles.initGL(gl);
+
+// ---------- First-person hand ----------
+// Two boxes (forearm + fist) in camera-local space. Reuses the block shader
+// so the hand samples the same atlas. Swings on left-click to give mining
+// feedback.
+const hand = new Hand();
+hand.initGL(gl);
+
+// Average the inner 8x8 pixels of a face tile to get a representative color.
+// Skips the border pixels so a thin highlight doesn't skew the result.
+// Returns a fresh [r, g, b] in 0..1 (linear) on each call.
+function sampleFaceColor(blockId, faceIndex) {
+  const block = BLOCKS[blockId];
+  if (!block || !block.faces) return [0.7, 0.7, 0.7];
+  const tile = block.faces[faceIndex];
+  if (tile == null || tile < 0) return [0.7, 0.7, 0.7];
+  const col = tile % ATLAS_GRID;
+  const row = Math.floor(tile / ATLAS_GRID);
+  const ox = col * TILE_SIZE;
+  const oy = row * TILE_SIZE;
+  let r = 0, g = 0, b = 0, n = 0;
+  // Average over the inner 8x8 of the 16x16 tile.
+  for (let py = 4; py < 12; py++) {
+    for (let px = 4; px < 12; px++) {
+      const i = ((oy + py) * ATLAS_SIZE + (ox + px)) * 4;
+      r += atlasPixels[i];
+      g += atlasPixels[i + 1];
+      b += atlasPixels[i + 2];
+      n++;
+    }
+  }
+  // atlasPixels is sRGB-ish; treat as linear for our flat-color shading.
+  return [r / n / 255, g / n / 255, b / n / 255];
+}
+
+// Map a hit's normal vector (nx, ny, nz) — each axis in {-1, 0, +1} — to the
+// face index used in BLOCKS[].faces. Order is +x, -x, +y, -y, +z, -z.
+function faceIndexFromNormal(nx, ny, nz) {
+  if (nx ===  1) return 0;
+  if (nx === -1) return 1;
+  if (ny ===  1) return 2;
+  if (ny === -1) return 3;
+  if (nz ===  1) return 4;
+  return 5; // nz === -1
+}
 
 // ---------- World + lighting ----------
 const DEFAULT_SEED = 1337;
@@ -309,6 +394,14 @@ function tryBreak() {
   if (id === 0) return;
   if (!isBlockSolid(id)) return; // can't break water/etc yet
   if (isBlockUnbreakable(id)) return; // bedrock floor is permanent in v0.1
+  // Spawn a particle burst at the block's center, tinted with the face the
+  // player hit (so different sides of grass/logs read as distinct colors).
+  const faceIndex = faceIndexFromNormal(hit.nx, hit.ny, hit.nz);
+  const rgb = sampleFaceColor(id, faceIndex);
+  particles.spawnBurst(
+    [hit.x + 0.5, hit.y + 0.5, hit.z + 0.5],
+    rgb
+  );
   world.setBlock(hit.x, hit.y, hit.z, 0);
   scheduleAutoSave();
   console.log(`[voxelville] broke block ${id} at (${hit.x}, ${hit.y}, ${hit.z})`);
@@ -381,11 +474,16 @@ function frame(now) {
   if (wheel !== 0) hud.cycleSlot(Math.sign(wheel));
 
   // Block break / place.
-  if (Input.consumeMouseLeft())  tryBreak();
+  if (Input.consumeMouseLeft()) {
+    hand.triggerSwing();
+    tryBreak();
+  }
   if (Input.consumeMouseRight()) tryPlace();
 
   player.update(dt);
   rebuildDirtyChunks();
+  particles.update(dt);
+  hand.update(dt);
 
   // Raycast once per frame for the selection box.
   const selOrigin = camera.position;
@@ -459,6 +557,43 @@ function frame(now) {
   // Restore state for subsequent passes.
   gl.depthMask(true);
   gl.disable(gl.BLEND);
+
+  // Particle puff: alpha-blended, depth-test on, depth-write off. Drawn
+  // after the transparent world pass so a burst always reads on top.
+  gl.enable(gl.BLEND);
+  gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+  gl.depthMask(false);
+  particles.render(gl, particleProg, particleLocs.attribs, particleLocs.uniforms, camera.getViewProj());
+  gl.depthMask(true);
+  gl.disable(gl.BLEND);
+
+  // First-person hand: drawn with the block shader (vertex layout matches)
+  // so the atlas-tinted surface reads as a skin tone. Culling is disabled
+  // for the hand so both sides draw during the swing — the swing rotates
+  // faces into and out of the camera's view, and we want every face to
+  // contribute regardless of the instantaneous winding orientation.
+  //
+  // The hand is built in camera-local space and stays glued to the view by
+  // applying projection only — `view` would cancel out anyway because the
+  // hand's world position equals the camera's world position. The swing
+  // rotation is folded in via `hand.applySwingTransform`.
+  gl.useProgram(blockProg);
+  gl.activeTexture(gl.TEXTURE0);
+  gl.bindTexture(gl.TEXTURE_2D, atlasTex);
+  gl.uniform1i(blockLocs.uniforms.u_tex, 0);
+  gl.bindBuffer(gl.ARRAY_BUFFER, hand.vbo);
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, hand.ibo);
+  gl.enableVertexAttribArray(blockLocs.attribs.a_pos);
+  gl.vertexAttribPointer(blockLocs.attribs.a_pos, 3, gl.FLOAT, false, 32, 0);
+  gl.enableVertexAttribArray(blockLocs.attribs.a_uv);
+  gl.vertexAttribPointer(blockLocs.attribs.a_uv, 2, gl.FLOAT, false, 32, 12);
+  gl.enableVertexAttribArray(blockLocs.attribs.a_light);
+  gl.vertexAttribPointer(blockLocs.attribs.a_light, 3, gl.FLOAT, false, 32, 20);
+  hand.applySwingTransform(hand._swingMvp, camera.getProj());
+  gl.uniformMatrix4fv(blockLocs.uniforms.u_mvp, false, hand._swingMvp);
+  gl.disable(gl.CULL_FACE);
+  gl.drawElements(gl.TRIANGLES, hand.indexCount, gl.UNSIGNED_SHORT, 0);
+  gl.enable(gl.CULL_FACE);
 
   // Selection box (wireframe outline of the targeted block).
   if (selHit.hit && selHit.t > 0.01) {
