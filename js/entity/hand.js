@@ -18,6 +18,7 @@
 // face orientations rotate in and out of front-facing.
 
 import { tileUV } from "../engine/atlas.js";
+import { TILE } from "../world/block.js";
 
 // Hand dimensions in meters. Sized to read clearly in the lower-right of
 // the view (Minecraft-style first-person hand).
@@ -35,11 +36,15 @@ const FIST_L = 0.20;
 // near plane so it doesn't z-clip — while the Y offset keeps the hand above
 // the HUD hotbar even on very small canvases.
 const FORE_OFFSET = { x: 0.34, y: -0.22, z: -0.70 };
-// Fist sits at the far end of the forearm.
+// Fist sits at the far end of the forearm. pushBox scales the ±0.5 verts by
+// size*0.5, so the built half-lengths are size*0.25 (not size*0.5): abut the
+// actual end faces, then embed 0.03 m so the forearm's end cap sits buried
+// inside the fist — no coplanar faces (no z-fighting seam), one solid arm.
+// Same x/y: the 0.01 m per-side overhang is the knuckle ridge.
 const FIST_OFFSET = {
   x: FORE_OFFSET.x,
   y: FORE_OFFSET.y,
-  z: FORE_OFFSET.z - FORE_L * 0.5 - FIST_L * 0.5,
+  z: FORE_OFFSET.z - (FORE_L + FIST_L) * 0.25 + 0.03,
 };
 
 // Shoulder pivot: down, right, and behind the camera — where the arm would
@@ -127,15 +132,15 @@ export class Hand {
     this._initialized = true;
 
     // Warm skin-ish tint via the light attribute (shader multiplies tex * light).
-    // Values > 1.0 brighten the planks tile above its native palette so the
-    // hand reads as flesh rather than dirty wood.
+    // Values > 1.0 brighten the tiles above their native palettes.
+    // Forearm = planks (reads as a sleeve), fist = sand (smooth pale tile
+    // that reads as skin under our light) so the joint is visually defined.
     const light = [1.20, 1.05, 0.85];
-    const uvTile = 8; // planks — gives a beige-tinted surface under our light.
 
     const pos = [];
     const idx = [];
-    pushBox(pos, idx, FORE_OFFSET, [FORE_W, FORE_H, FORE_L], light, uvTile);
-    pushBox(pos, idx, FIST_OFFSET, [FIST_W, FIST_H, FIST_L], light, uvTile);
+    pushBox(pos, idx, FORE_OFFSET, [FORE_W, FORE_H, FORE_L], light, TILE.PLANKS);
+    pushBox(pos, idx, FIST_OFFSET, [FIST_W, FIST_H, FIST_L], light, TILE.SAND);
 
     const positions = new Float32Array(pos);
     const indices = new Uint16Array(idx);
