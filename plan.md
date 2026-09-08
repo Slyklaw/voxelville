@@ -298,15 +298,17 @@ Done when: breaking a block produces a small puff of colored particles. (This is
 
 ---
 
-### Phase 16 — Hand-swing animation
-**Goal**: Visible right hand swings when I left-click.
+### Phase 16 — First-person hand with swing animation
+**Goal**: A visible right hand sits in the lower-right of the view at rest and swings down-and-back when the player left-clicks.
 
 Tasks:
-1. Add a simple 3D hand model: 4×4×12 box (forearm) + 4×4×4 box (fist) parented to a node.
-2. Render in a separate pass: depth-test on, but drawn after the world with `gl.disable(gl.CULL_FACE)` and a small offset based on a `swingProgress` variable.
-3. `swingProgress` ramps 0→1→0 over 200ms on click.
+1. Build the hand in `js/entity/hand.js` as two boxes parented to **camera-local space** (right=+X, up=+Y, forward=-Z): forearm 0.26×0.26×0.36 m at `(0.24, 0.00, -0.70)`, fist 0.30×0.30×0.20 m at `(0.24, 0.00, -0.88)`. The Y offset keeps the hand above the HUD hotbar even on tiny canvases; the Z keeps the back face of the forearm 0.52 m in front of the camera, well past the 0.1 near plane so the back face reads as a hand silhouette rather than a sliver.
+2. Reuse the block shader + atlas (vertex layout is identical: pos3 + uv2 + light3 = 8 floats). Tint toward a skin tone via the light attribute (`[1.20, 1.05, 0.85]` — values > 1.0 brighten the planks tile above its native palette) with `uvTile=8` (planks) so the surface reads as flesh rather than dirty wood.
+3. Draw in a separate pass **after** the world: depth-test on, depth-write on, `CULL_FACE` disabled (faces rotate in and out of front-facing mid-swing; both sides must draw). Use `proj * handVertices` only — skip the view matrix because the hand's world position equals the camera's and the view would cancel out anyway.
+4. Swing: rotate around the **wrist pivot** at the back of the forearm (`z=-0.52`) on the X axis over 200 ms, using a stitched half-sine curve `0→-1→+0.3` (not a linear ramp — the snap-back past neutral is what reads as a swing). The translation column of the swing local matrix is `WRIST_Z * (1 - cos(angle))`.
+5. Trigger: on left-click (`Input.leftClick` edge), call `hand.triggerSwing()`; ignore re-triggers while one is in progress. `hand.update(dt)` advances `swingT` and clears `swinging` when `>= 0.20 s`.
 
-Done when: clicking shows the right hand swing; the world looks more alive.
+Done when: at rest, the hand sits in the lower-right of the view at a readable size; clicking produces a visible down-and-back rotation; nothing clips the world or the HUD.
 
 ---
 

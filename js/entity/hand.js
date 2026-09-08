@@ -19,20 +19,20 @@ import { tileUV } from "../engine/atlas.js";
 
 // Hand dimensions in meters. Sized to read clearly in the lower-right of
 // the view (Minecraft-style first-person hand).
-const FORE_W = 0.20;
-const FORE_H = 0.20;
-const FORE_L = 0.60;
+const FORE_W = 0.26;
+const FORE_H = 0.26;
+const FORE_L = 0.36;
 
-const FIST_W = 0.24;
-const FIST_H = 0.24;
-const FIST_L = 0.24;
+const FIST_W = 0.30;
+const FIST_H = 0.30;
+const FIST_L = 0.20;
 
 // Hand center positions in camera-local space (right=+X, up=+Y, forward=-Z).
-// FORE_OFFSET puts the forearm in the lower-right of the view, extending
-// forward (toward -Z). The Z offset is large enough that the back face of
-// the forearm is well past the near plane, so the back face has enough
-// vertical screen space to read as a hand silhouette rather than a sliver.
-const FORE_OFFSET = { x: 0.30, y: -0.30, z: -0.80 };
+// FORE_OFFSET puts the forearm in the lower-right of the view. Z keeps the
+// back face of the forearm 0.52 m in front of the camera — well past the 0.1
+// near plane so it doesn't z-clip — while the Y offset keeps the hand above
+// the HUD hotbar even on very small canvases.
+const FORE_OFFSET = { x: 0.34, y: -0.22, z: -0.70 };
 // Fist sits at the far end of the forearm.
 const FIST_OFFSET = {
   x: FORE_OFFSET.x,
@@ -77,7 +77,7 @@ function pushBox(pos, idx, offset, size, light, uvTile) {
   const sx = size[0] * 0.5;
   const sy = size[1] * 0.5;
   const sz = size[2] * 0.5;
-  const base = idx.length;
+  const base = pos.length / 8;
   for (let f = 0; f < 6; f++) {
     const face = FACES[f];
     for (let i = 0; i < 4; i++) {
@@ -92,7 +92,7 @@ function pushBox(pos, idx, offset, size, light, uvTile) {
         light[0], light[1], light[2]
       );
     }
-    idx.push(base + 0, base + 1, base + 2, base + 0, base + 2, base + 3);
+    idx.push(base + f * 4 + 0, base + f * 4 + 1, base + f * 4 + 2, base + f * 4 + 0, base + f * 4 + 2, base + f * 4 + 3);
   }
 }
 
@@ -116,7 +116,9 @@ export class Hand {
     this._initialized = true;
 
     // Warm skin-ish tint via the light attribute (shader multiplies tex * light).
-    const light = [0.95, 0.85, 0.72];
+    // Values > 1.0 brighten the planks tile above its native palette so the
+    // hand reads as flesh rather than dirty wood.
+    const light = [1.20, 1.05, 0.85];
     const uvTile = 8; // planks — gives a beige-tinted surface under our light.
 
     const pos = [];
