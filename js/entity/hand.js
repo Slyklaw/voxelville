@@ -8,8 +8,10 @@
 // world position equals the camera's world position.)
 //
 // The hand swings when the player left-clicks: a single 200 ms cycle
-// (0→1→0) rotates the hand around its wrist (the back of the forearm) on
-// the X axis. The rotation is folded into the MVP each frame.
+// (0→1→0) rotates the whole arm about the shoulder (down-right-behind the
+// camera) with pitch + yaw + roll and a forward thrust, so the fist arcs
+// inward toward screen center like a punch thrown from the shoulder. The
+// rotation is folded into the MVP each frame.
 //
 // Drawn after the world with depth-test on, depth-write on. Culling is
 // disabled during the draw so the hand reads correctly mid-swing, when
@@ -40,11 +42,20 @@ const FIST_OFFSET = {
   z: FORE_OFFSET.z - FORE_L * 0.5 - FIST_L * 0.5,
 };
 
-// Wrist pivot: the back face of the forearm (the end closest to the camera,
-// where a real hand would attach to the player's body). Rotation around the
-// X axis pivots there so the fist swings down and back up while the wrist
-// stays put.
-const WRIST_Z = FORE_OFFSET.z + FORE_L * 0.5;
+// Shoulder pivot: down, right, and behind the camera — where the arm would
+// meet the torso. Rotating the whole hand about this point (instead of the
+// wrist) swings the fist in an arc: it travels inward toward screen center
+// and forward while pitching, like a punch, rather than seesawing up and
+// down around the wrist.
+const SHOULDER = { x: 0.42, y: -0.65, z: -0.35 };
+
+// Secondary motion amplitudes, scaled by a 0→1→0 envelope so they vanish at
+// rest: yaw turns the fist toward screen center, roll cants it, thrust
+// punches it forward (-Z).
+const PITCH_AMP = (22 * Math.PI) / 180;
+const YAW_AMP = (14 * Math.PI) / 180;
+const ROLL_AMP = (8 * Math.PI) / 180;
+const THRUST = 0.08; // meters forward at mid-swing
 
 const SWING_DURATION = 0.20; // seconds for one full 0→1→0 cycle
 
@@ -153,10 +164,10 @@ export class Hand {
     }
   }
 
-// Build a hand-local rotation around the wrist (X axis), folded into `base`.
+// Build a hand-local swing about the shoulder, folded into `base`.
 // baseMVP = proj. We want mvp = proj * swingLocal, where swingLocal =
-// T(wrist) * Rx(angle) * T(-wrist) — rotates the hand around the wrist
-// pivot in hand-local space.
+// T(S) * Ry(yaw) * Rx(pitch) * Rz(roll) * T(-S), plus a forward thrust —
+// rotates the whole arm around the shoulder pivot in hand-local space.
   applySwingTransform(out, base) {
     if (!this.swinging) {
       for (let i = 0; i < 16; i++) out[i] = base[i];
@@ -172,27 +183,47 @@ export class Hand {
     } else {
       k = -Math.cos(((t - 0.5) / 0.5) * (Math.PI * 0.5)) * 0.7 + 0.3;
     }
-    const angle = k * (Math.PI / 3); // up to ±60°
-    const c = Math.cos(angle);
-    const s = Math.sin(angle);
+    const pitch = k * PITCH_AMP; // chop, scaled to keep the arc modest
+    const e = Math.sin(Math.PI * t); // 0→1→0 envelope for the extras
+    const yaw = YAW_AMP * e;   // toward screen center mid-swing
+    const roll = ROLL_AMP * e; // slight cant mid-swing
 
-    // swingLocal = T(wristZ) * Rx(angle) * T(-wristZ), column-major.
-    // Rotation around x:
-    //   1   0    0   0
-    //   0   cos -sin 0
-    //   0   sin  cos 0
-    //   0   0    0   1
-    // After prepending T(-wristZ) and appending T(wristZ), only the
-    // translation column changes:
-    //   1   0    0   0
-    //   0   cos -sin 0
-    //   0   sin  cos wristZ * (1 - cos)
-    //   0   0    0   1
+    const cp = Math.cos(pitch), sp = Math.sin(pitch);
+    const cy = Math.cos(yaw), sy = Math.sin(yaw);
+    const cr = Math.cos(roll), sr = Math.sin(roll);
+
+    // R = Ry(yaw) * Rx(pitch) * Rz(roll). The Rx below uses the same sign
+    // convention as the old wrist-only matrix so the chop keeps its feel:
+    //   Rx = [[1,0,0],[0,cp,sp],[0,-sp,cp]]
+    //   Ry = [[cy,0,sy],[0,1,0],[-sy,0,cy]]
+    //   Rz = [[cr,-sr,0],[sr,cr,0],[0,0,1]]
+    // A = Rx * Rz:
+    const a00 = cr, a01 = -sr, a02 = 0;
+    const a10 = cp * sr, a11 = cp * cr, a12 = sp;
+    const a20 = -sp * sr, a21 = -sp * cr, a22 = cp;
+    // R = Ry * A:
+    const r00 = cy * a00 + sy * a20;
+    const r01 = cy * a01 + sy * a21;
+    const r02 = sy * a22;
+    const r10 = a10;
+    const r11 = a11;
+    const r12 = a12;
+    const r20 = -sy * a00 + cy * a20;
+    const r21 = -sy * a01 + cy * a21;
+    const r22 = cy * a22;
+
+    // Translation: shoulder stays fixed (T = S - R*S), plus forward thrust.
+    const sx = SHOULDER.x, sy2 = SHOULDER.y, sz = SHOULDER.z;
+    const tx = sx - (r00 * sx + r01 * sy2 + r02 * sz);
+    const ty = sy2 - (r10 * sx + r11 * sy2 + r12 * sz);
+    const tz = sz - (r20 * sx + r21 * sy2 + r22 * sz) - THRUST * e;
+
+    // swingLocal in column-major storage.
     const sl = this._swingLocal;
-    sl[0] = 1;  sl[1] = 0;  sl[2] = 0;  sl[3] = 0;
-    sl[4] = 0;  sl[5] = c;  sl[6] = s;  sl[7] = 0;
-    sl[8] = 0;  sl[9] = -s; sl[10] = c; sl[11] = 0;
-    sl[12] = 0; sl[13] = 0; sl[14] = WRIST_Z * (1 - c); sl[15] = 1;
+    sl[0] = r00; sl[1] = r10; sl[2] = r20; sl[3] = 0;
+    sl[4] = r01; sl[5] = r11; sl[6] = r21; sl[7] = 0;
+    sl[8] = r02; sl[9] = r12; sl[10] = r22; sl[11] = 0;
+    sl[12] = tx; sl[13] = ty; sl[14] = tz; sl[15] = 1;
 
     // out = base * sl (column-major mat4 multiply).
     for (let col = 0; col < 4; col++) {
