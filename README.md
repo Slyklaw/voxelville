@@ -59,3 +59,5 @@ Review design.md and then plan.md. Implement Phase 15.
 Implement Phase 16.
 
 Missing hand polygons. Switching to Muse Spark 1.3.
+
+Excellent. Continue on with Phase 17.

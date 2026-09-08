@@ -316,10 +316,10 @@ Done when: at rest, the hand sits in the lower-right of the view at a readable s
 **Goal**: Walk 100 blocks away from spawn and the world keeps generating.
 
 Tasks:
-1. Add a chunk loader: each tick, ensure chunks within `renderDistance = 4` (4 chunks = 64 blocks) of the player are loaded.
-2. When a chunk is loaded, generate terrain (reuse Phase 10 logic) and mesh it.
+1. Add a chunk loader: when the player enters a new chunk, ensure chunks within radius 8 of the player are loaded (wider than the spawn-time radius-4 square).
+2. When a chunk is loaded, generate terrain (reuse Phase 10 logic) and mesh it. Trees scatter only on first decoration (tracked per chunk), so walking back never resurrects chopped trees or stamps over player edits; loaded save chunks count as already decorated.
 3. When out of range, optionally keep it (v0.1: keep loaded; memory is cheap for this size).
-4. Add a worker (`js/engine/worker.js`) for chunk meshing on a separate thread; main thread only uploads the VBO when ready.
+4. Mesh on a per-frame budget (max 4 rebuilds, nearest-first around the player) instead of a worker: a 16-tall chunk meshes in well under a millisecond, so a worker's IPC plus cross-border neighbor shipping would cost more than it saves. Revisit when world height grows. New ground is auto-saved via the existing debounced save.
 
 Done when: walking far in any direction keeps showing hilly terrain; FPS stays reasonable.
 

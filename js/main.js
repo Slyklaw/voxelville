@@ -333,6 +333,12 @@ function rebuildChunkMesh(key) {
 // Find chunks that need a rebuild: any chunk flagged dirty, plus any loaded
 // chunk that shares a chunk boundary with a dirty chunk (its faces on that
 // boundary depend on the neighbor's state and must be re-evaluated).
+//
+// Streaming (Phase 17) can dirty a dozen chunks in one frame when the player
+// crosses a border, so rebuilds are budgeted and nearest-first: the chunks
+// around the player resolve first, the rest follow over the next frames.
+// Anything not rebuilt keeps its dirty flag for a later frame.
+const MESH_BUDGET = 4; // design §3.9: max 4 chunk rebuilds per frame
 function rebuildDirtyChunks() {
   const dirtyKeys = [];
   for (const [key, chunk] of world.chunks) {
@@ -353,7 +359,15 @@ function rebuildDirtyChunks() {
       if (world.chunks.has(n)) toRebuild.add(n);
     }
   }
-  for (const key of toRebuild) rebuildChunkMesh(key);
+  // Nearest-first around the player's chunk so the visible area wins.
+  const pcx = Math.floor((player.box.x + player.width * 0.5) / CHUNK_SIZE);
+  const pcz = Math.floor((player.box.z + player.width * 0.5) / CHUNK_SIZE);
+  const ordered = [...toRebuild].sort((a, b) => {
+    const [ax, az] = a.split(",").map(Number);
+    const [bx, bz] = b.split(",").map(Number);
+    return (ax - pcx) ** 2 + (az - pcz) ** 2 - ((bx - pcx) ** 2 + (bz - pcz) ** 2);
+  });
+  for (const key of ordered.slice(0, MESH_BUDGET)) rebuildChunkMesh(key);
 }
 
 for (const key of world.chunks.keys()) {
@@ -447,6 +461,24 @@ player.syncCamera();
 
 hud.player = player;
 
+// Phase 17 streamer: keep a RENDER_RADIUS square of generated terrain around
+// the player. Runs only when the player enters a new chunk — crossing a
+// border generates at most one fresh row/column, and meshing catches up over
+// the next frames via the rebuild budget. Chunks are kept once loaded
+// (memory is cheap at this size), and new ground is auto-saved.
+let lastStreamCX = Infinity;
+let lastStreamCZ = Infinity;
+const STREAM_RADIUS = 8; // wider than the spawn-time RENDER_RADIUS square
+function streamChunks() {
+  const pcx = Math.floor((player.box.x + player.width * 0.5) / CHUNK_SIZE);
+  const pcz = Math.floor((player.box.z + player.width * 0.5) / CHUNK_SIZE);
+  if (pcx === lastStreamCX && pcz === lastStreamCZ) return;
+  lastStreamCX = pcx;
+  lastStreamCZ = pcz;
+  world.ensureChunksAround(pcx, pcz, STREAM_RADIUS);
+  scheduleAutoSave();
+}
+
 function frame(now) {
   const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
@@ -481,6 +513,7 @@ function frame(now) {
   if (Input.consumeMouseRight()) tryPlace();
 
   player.update(dt);
+  streamChunks();
   rebuildDirtyChunks();
   particles.update(dt);
   hand.update(dt);

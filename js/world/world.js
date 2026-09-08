@@ -41,6 +41,7 @@ export class World {
   constructor(seed = 1337) {
     this.seed = seed >>> 0;
     this.chunks = new Map();
+    this.decorated = new Set(); // chunk keys that already had trees scattered
     this.noise = new Noise2D(this.seed);
   }
 
@@ -66,16 +67,28 @@ export class World {
         this.getChunk(cx + dx, cz + dz, true);
       }
     }
-    // Pass 2: scatter trees across the loaded area. Done as a separate pass so
-    // tree canopies that spill into neighbors don't trigger on-the-fly terrain
-    // generation mid-decoration.
-    for (const [, chunk] of this.chunks) {
-      this.decorateChunk(chunk);
+    // Pass 2: scatter trees, but only on chunks that have never been
+    // decorated. Re-scattering would be wasted work and — worse — would
+    // resurrect player-chopped trees and stamp canopies over player edits.
+    // Decoration is deterministic per (x, z, seed), so a chunk decorated
+    // late (when the player walks into range) looks exactly as if it had
+    // been decorated at startup.
+    for (let dz = -radius; dz <= radius; dz++) {
+      for (let dx = -radius; dx <= radius; dx++) {
+        const k = this.chunkKey(cx + dx, cz + dz);
+        if (this.decorated.has(k)) continue;
+        const chunk = this.chunks.get(k);
+        if (!chunk) continue;
+        this.decorateChunk(chunk);
+        this.decorated.add(k);
+      }
     }
   }
 
   // Insert a chunk's block data without running the generator. Used when
   // restoring from a save file. Marks the chunk dirty so its mesh rebuilds.
+  // Loaded chunks were decorated when first generated, so they count as
+  // decorated — otherwise the loader would re-scatter trees over the save.
   setChunkBlocks(cx, cz, blocks) {
     const k = this.chunkKey(cx, cz);
     let c = this.chunks.get(k);
@@ -85,6 +98,7 @@ export class World {
     }
     c.blocks.set(blocks);
     c.dirty = true;
+    this.decorated.add(k);
   }
 
   // World-space coords.
