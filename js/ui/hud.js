@@ -19,6 +19,7 @@ export class HUD {
     this.ctx = canvas.getContext("2d");
     this.atlasPixels = atlasPixels;
     this.player = null;
+    this.version = "";
     this.selectedSlot = 0;
     this.hoveredSlot = -1; // -1 = not over any slot
 
@@ -110,6 +111,18 @@ export class HUD {
     this.drawHotbar(ctx, w, h);
     this.drawTooltip(ctx, w, h);
     this.drawStatusText(ctx, w, h);
+    this.drawVersion(ctx, w, h);
+  }
+
+  drawVersion(ctx, w, h) {
+    if (!this.version) return;
+    ctx.font = "11px monospace";
+    ctx.textAlign = "right";
+    ctx.textBaseline = "bottom";
+    ctx.fillStyle = "rgba(0, 0, 0, 0.6)";
+    ctx.fillText(this.version, w - 7, h - 7);
+    ctx.fillStyle = "rgba(255, 255, 255, 0.75)";
+    ctx.fillText(this.version, w - 8, h - 8);
   }
 
   drawCrosshair(ctx, w, h) {

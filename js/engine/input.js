@@ -87,6 +87,9 @@ export function attachInput(targetEl) {
     oncePressed.clear();
     mouseLeftDown = false;
     mouseRightDown = false;
+    // Release the cursor so it doesn't stay trapped while the tab is
+    // unfocused; returning re-locks via canvas click or Resume.
+    if (document.pointerLockElement) document.exitPointerLock();
   });
 
   document.addEventListener("pointerlockchange", () => {

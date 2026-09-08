@@ -7,9 +7,32 @@
     <link rel="stylesheet" href="css/hud.css" />
   </head>
   <body>
+    <div id="splash">
+      <div class="splash-title">Voxelville</div>
+      <div class="splash-sub">Generating world…</div>
+      <div class="splash-bar"><div id="splash-fill"></div></div>
+    </div>
     <canvas id="gl"></canvas>
     <div id="hud">
       <canvas id="hud-canvas"></canvas>
+    </div>
+    <div id="settings" class="hidden">
+      <div class="settings-card">
+        <h2>Settings</h2>
+        <label class="settings-row">
+          <span>Render distance <em id="set-render-distance-value"></em></span>
+          <input id="set-render-distance" type="range" min="2" max="8" step="1" />
+        </label>
+        <label class="settings-row">
+          <span>Mouse sensitivity <em id="set-sensitivity-value"></em></span>
+          <input id="set-sensitivity" type="range" min="0.0005" max="0.01" step="0.0005" />
+        </label>
+        <div class="settings-buttons">
+          <button id="set-fullscreen" type="button">Toggle fullscreen</button>
+          <button id="set-resume" type="button">Resume (Esc)</button>
+        </div>
+        <p class="settings-hint">Settings save automatically.</p>
+      </div>
     </div>
     <script type="module" src="js/main.js"></script>
   </body>

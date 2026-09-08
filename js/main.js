@@ -14,14 +14,46 @@ import { HUD } from "./ui/hud.js";
 import { saveWorld, loadWorld } from "./storage/save.js";
 import { ParticleSystem } from "./engine/particles.js";
 import { Hand } from "./entity/hand.js";
+import { loadSettings, saveSettings } from "./storage/settings.js";
+import { createSettingsPanel } from "./ui/settings.js";
+
+export const VERSION = "v0.1.0";
 
 const canvas = document.getElementById("gl");
+// Splash progress (Phase 18): the overlay is plain HTML so it paints before
+// the module finishes loading the world; each stage below advances the bar.
+const splashFill = document.getElementById("splash-fill");
+function setSplash(pct) {
+  if (splashFill) splashFill.style.width = `${Math.max(5, Math.min(100, pct))}%`;
+}
+function hideSplash() {
+  const splash = document.getElementById("splash");
+  if (splash) splash.style.display = "none";
+}
+
+// Settings load before worldgen so the spawn-time chunk square honors them.
+const settings = loadSettings();
+let sensitivity = settings.sensitivity;
 const { gl, isWebGL2 } = createGL(canvas);
 console.log(`[voxelville] WebGL ${isWebGL2 ? "2.0" : "1.0"} context acquired`);
 
 attachInput(canvas);
+
+let paused = false;
+let settingsPanel = null; // created after the HUD, below
+function openSettings() {
+  paused = true;
+  if (settingsPanel) settingsPanel.open();
+}
+function resumeGame() {
+  if (settingsPanel) settingsPanel.close();
+  paused = false;
+  Input.requestPointerLock(canvas);
+}
 Input.setLockChangeHandler((locked) => {
   console.log(`[voxelville] pointer lock ${locked ? "acquired" : "released"}`);
+  // Esc while locked drops the lock (browser-reserved) — that opens settings.
+  if (!locked) openSettings();
 });
 
 const camera = new Camera({ fov: 70, near: 0.1, far: 1000 });
@@ -32,6 +64,7 @@ const atlasTex = createTexture2D(gl, { min: gl.NEAREST, mag: gl.NEAREST, wrapS: 
 gl.bindTexture(gl.TEXTURE_2D, atlasTex);
 gl.pixelStorei(gl.UNPACK_FLIP_Y_WEBGL, false);
 gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, ATLAS_SIZE, ATLAS_SIZE, 0, gl.RGBA, gl.UNSIGNED_BYTE, atlasPixels);
+setSplash(30);
 
 // ---------- Block shader ----------
 const blockVertSrc = `#version 300 es
@@ -41,28 +74,44 @@ in vec3 a_light;
 uniform mat4 u_mvp;
 out vec2 v_uv;
 out vec3 v_light;
+out vec3 v_world;
 void main() {
   gl_Position = u_mvp * vec4(a_pos, 1.0);
   v_uv = a_uv;
   v_light = a_light;
+  v_world = a_pos;
 }
 `;
 const blockFragSrc = `#version 300 es
 precision highp float;
 in vec2 v_uv;
 in vec3 v_light;
+in vec3 v_world;
 out vec4 outColor;
 uniform sampler2D u_tex;
+uniform vec3 u_fogColor;
+uniform vec2 u_fogRange;
+uniform vec3 u_camPos;
+uniform float u_useFog;
 void main() {
   vec4 c = texture(u_tex, v_uv);
   if (c.a < 0.5) discard;
-  outColor = vec4(c.rgb * v_light, c.a);
+  vec3 rgb = c.rgb * v_light;
+  if (u_useFog > 0.5) {
+    float d = distance(v_world, u_camPos);
+    float f = clamp((d - u_fogRange.x) / (u_fogRange.y - u_fogRange.x), 0.0, 1.0);
+    rgb = mix(rgb, u_fogColor, f);
+  }
+  outColor = vec4(rgb, c.a);
 }
 `;
+const FOG_COLOR = [0.78, 0.88, 0.96]; // matches the sky horizon below
+const FOG_NEAR = 32.0;
+const FOG_FAR = 80.0;
 const blockProg = build(gl, blockVertSrc, blockFragSrc);
 const blockLocs = {
   attribs: attributes(gl, blockProg, ["a_pos", "a_uv", "a_light"]),
-  uniforms: uniforms(gl, blockProg, ["u_mvp", "u_tex"]),
+  uniforms: uniforms(gl, blockProg, ["u_mvp", "u_tex", "u_fogColor", "u_fogRange", "u_camPos", "u_useFog"]),
 };
 
 // ---------- Sky shader (fullscreen gradient) ----------
@@ -221,7 +270,6 @@ function faceIndexFromNormal(nx, ny, nz) {
 
 // ---------- World + lighting ----------
 const DEFAULT_SEED = 1337;
-const RENDER_RADIUS = 4; // 4-chunk radius = 8x8 area = 128x128 blocks
 
 async function buildWorld() {
   const saved = await loadWorld().catch((err) => {
@@ -240,7 +288,8 @@ async function buildWorld() {
 }
 
 const world = await buildWorld();
-world.ensureChunksAround(0, 0, RENDER_RADIUS);
+setSplash(60);
+world.ensureChunksAround(0, 0, settings.renderDistance);
 
 // Debounced auto-save: any block change schedules a write 500ms later.
 // Repeated changes within the window reset the timer so we only save once the
@@ -379,10 +428,34 @@ const totalQuads = [...chunkGl.values()].reduce(
   0
 );
 console.log(`[voxelville] world generated: ${world.chunks.size} chunks, ${totalQuads} quads`);
+setSplash(90);
 
 // ---------- HUD ----------
 const hudCanvas = document.getElementById("hud-canvas");
 const hud = new HUD(hudCanvas, atlasPixels);
+hud.version = VERSION;
+
+// ---------- Settings panel ----------
+settingsPanel = createSettingsPanel({
+  panel: document.getElementById("settings"),
+  initial: settings,
+  onChange(next) {
+    settings.renderDistance = next.renderDistance;
+    settings.sensitivity = next.sensitivity;
+    sensitivity = settings.sensitivity;
+    saveSettings(settings);
+    // Force the streamer to re-evaluate at the new radius immediately.
+    lastStreamCX = Infinity;
+    lastStreamCZ = Infinity;
+  },
+  onResume: resumeGame,
+  onOpen: openSettings,
+  isLocked: () => Input.isPointerLocked(),
+  onFullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen().catch(() => {});
+    else document.documentElement.requestFullscreen().catch(() => {});
+  },
+});
 
 // ---------- Block interaction ----------
 const PICK_REACH = 5.0;
@@ -450,8 +523,6 @@ let fpsAccum = 0;
 let fpsFrames = 0;
 let fpsTimer = 0;
 
-const sensitivity = 0.0025;
-
 // ---- Player ----
 const player = new Player(camera, world);
 player.setPosition(0, 18, 0);
@@ -461,24 +532,24 @@ player.syncCamera();
 
 hud.player = player;
 
-// Phase 17 streamer: keep a RENDER_RADIUS square of generated terrain around
-// the player. Runs only when the player enters a new chunk — crossing a
-// border generates at most one fresh row/column, and meshing catches up over
-// the next frames via the rebuild budget. Chunks are kept once loaded
+// Phase 17 streamer: keep a render-distance square of generated terrain
+// around the player. Runs only when the player enters a new chunk — crossing
+// a border generates at most one fresh row/column, and meshing catches up
+// over the next frames via the rebuild budget. Chunks are kept once loaded
 // (memory is cheap at this size), and new ground is auto-saved.
 let lastStreamCX = Infinity;
 let lastStreamCZ = Infinity;
-const STREAM_RADIUS = 8; // wider than the spawn-time RENDER_RADIUS square
 function streamChunks() {
   const pcx = Math.floor((player.box.x + player.width * 0.5) / CHUNK_SIZE);
   const pcz = Math.floor((player.box.z + player.width * 0.5) / CHUNK_SIZE);
   if (pcx === lastStreamCX && pcz === lastStreamCZ) return;
   lastStreamCX = pcx;
   lastStreamCZ = pcz;
-  world.ensureChunksAround(pcx, pcz, STREAM_RADIUS);
+  world.ensureChunksAround(pcx, pcz, settings.renderDistance);
   scheduleAutoSave();
 }
 
+let splashHidden = false;
 function frame(now) {
   const dt = Math.min(0.05, (now - lastTime) / 1000);
   lastTime = now;
@@ -487,6 +558,7 @@ function frame(now) {
   const aspect = canvas.width / canvas.height;
   camera.setAspect(aspect);
 
+  if (!paused) {
   if (Input.isPointerLocked()) {
     camera.rotate(Input.mouseDeltaX() * sensitivity, -Input.mouseDeltaY() * sensitivity);
   }
@@ -517,6 +589,10 @@ function frame(now) {
   rebuildDirtyChunks();
   particles.update(dt);
   hand.update(dt);
+  } else {
+    Input.resetMouseDelta();
+    Input.consumeWheel();
+  }
 
   // Raycast once per frame for the selection box.
   const selOrigin = camera.position;
@@ -526,19 +602,26 @@ function frame(now) {
   // ---- Render ----
   gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT);
 
-  // Sky (depth test still on; vertex emits gl_Position.z = 0.999 to be behind everything)
+  // Sky (depth test still on; vertex emits gl_Position.z = 0.999 to sit
+  // behind everything — LEQUAL so the far plane still accepts it).
   gl.depthMask(false);
+  gl.depthFunc(gl.LEQUAL);
   gl.useProgram(skyProg);
   gl.bindBuffer(gl.ARRAY_BUFFER, skyVbo);
   gl.enableVertexAttribArray(skyLocs);
   gl.vertexAttribPointer(skyLocs, 2, gl.FLOAT, false, 0, 0);
   gl.drawArrays(gl.TRIANGLES, 0, 6);
+  gl.depthFunc(gl.LESS);
   gl.depthMask(true);
 
   // World
   const vp = camera.getViewProj();
   gl.useProgram(blockProg);
   gl.uniformMatrix4fv(blockLocs.uniforms.u_mvp, false, vp);
+  gl.uniform3f(blockLocs.uniforms.u_fogColor, FOG_COLOR[0], FOG_COLOR[1], FOG_COLOR[2]);
+  gl.uniform2f(blockLocs.uniforms.u_fogRange, FOG_NEAR, FOG_FAR);
+  gl.uniform3f(blockLocs.uniforms.u_camPos, camera.position[0], camera.position[1], camera.position[2]);
+  gl.uniform1f(blockLocs.uniforms.u_useFog, 1.0);
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, atlasTex);
   gl.uniform1i(blockLocs.uniforms.u_tex, 0);
@@ -554,10 +637,16 @@ function frame(now) {
     gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, entry.ibo);
   };
 
-  // Opaque pass: depth test on, depth write on, blending off.
+  // Opaque pass: depth test on, depth write on, blending off. Chunks past
+  // the render-distance setting are skipped (they stay loaded, just undrawn).
   gl.disable(gl.BLEND);
   gl.depthMask(true);
+  const rd = settings.renderDistance;
+  const pcx = Math.floor(camera.position[0] / CHUNK_SIZE);
+  const pcz = Math.floor(camera.position[2] / CHUNK_SIZE);
+  const inRange = (entry) => Math.abs(entry.cx - pcx) <= rd && Math.abs(entry.cz - pcz) <= rd;
   for (const [, entry] of chunkGl) {
+    if (!inRange(entry)) continue;
     if (entry.opaque.indexCount === 0) continue;
     setChunkAttribs(entry.opaque);
     gl.drawElements(gl.TRIANGLES, entry.opaque.indexCount, gl.UNSIGNED_SHORT, 0);
@@ -573,6 +662,7 @@ function frame(now) {
   const cp = camera.position;
   const transparentChunks = [];
   for (const [, entry] of chunkGl) {
+    if (!inRange(entry)) continue;
     if (entry.transparent.indexCount === 0) continue;
     const ccx = entry.cx * CHUNK_SIZE + CHUNK_SIZE * 0.5;
     const ccz = entry.cz * CHUNK_SIZE + CHUNK_SIZE * 0.5;
@@ -614,6 +704,7 @@ function frame(now) {
   gl.activeTexture(gl.TEXTURE0);
   gl.bindTexture(gl.TEXTURE_2D, atlasTex);
   gl.uniform1i(blockLocs.uniforms.u_tex, 0);
+  gl.uniform1f(blockLocs.uniforms.u_useFog, 0.0); // hand is ~1 m out: fog must not touch it
   gl.bindBuffer(gl.ARRAY_BUFFER, hand.vbo);
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, hand.ibo);
   gl.enableVertexAttribArray(blockLocs.attribs.a_pos);
@@ -661,6 +752,12 @@ function frame(now) {
 
   // HUD (2D overlay).
   hud.draw();
+
+  if (!splashHidden) {
+    splashHidden = true;
+    setSplash(100);
+    hideSplash();
+  }
 
   fpsAccum += dt;
   fpsFrames += 1;
